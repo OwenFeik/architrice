@@ -1,7 +1,7 @@
 import os
 import time
 
-import api
+import archidekt
 import cockatrice
 
 
@@ -19,7 +19,7 @@ def download_deck(deck_id, path, dir_cache):
     else:
         dir_cache[deck_id] = deck_cache = {"name": None, "last_updated": 0}
 
-    deck = api.get_deck(deck_id)
+    deck = archidekt.get_deck(deck_id)
 
     if deck_cache["name"]:
         name = deck_cache["name"]

@@ -63,7 +63,7 @@ else:
 #       "deck": "last deck downloaded",
 #       "path": "output directory",
 #       "dirs": {
-#           "PATH_TO_DIR_1": {
+#           "PATH_TO_DIR": {
 #               "ARCHIDEKT_DECK_ID": {
 #                   "last_updated": timestamp
 #                   "name": "file name"
