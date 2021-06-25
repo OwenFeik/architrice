@@ -64,8 +64,31 @@ def download_deck(deck_id, path, dir_cache):
     logging.info(f"Successfully downloaded {deck_id}.")
 
 
+def decks_to_update(username, dir_cache):
+    decks = source.get_deck_list(username)
+    logging.info(f"Total decks: {len(decks)}.")
+
+    to_download = []
+    for deck in decks:
+        if (
+            deck["id"] not in dir_cache
+            or deck["updated"] > dir_cache[deck["id"]]["updated"]
+        ):
+            to_download.append(deck["id"])
+
+    logging.info(f"To update: {len(to_download)}.")
+
+    return to_download
+
+
 def download_latest(username, path, dir_cache):
-    pass
+    to_download = decks_to_update(username, dir_cache)
+    if len(to_download) == 0:
+        logging.info("All decks up to date.")
+    else:
+        download_deck(
+            max(to_download, key=lambda d: d["updated"])["id"], path, dir_cache
+        )
 
 
 # This is asynchronous so that it can use a ThreadPoolExecutor to speed up
@@ -85,22 +108,12 @@ async def download_decks_pool(loop, decks, path, dir_cache):
 
 def download_all(username, path, dir_cache):
     logging.info(f"Downloading all decks for {username}.")
-    decks = source.get_deck_list(username)
-    logging.info(f"Total decks: {len(decks)}.")
-
-    to_download = []
-    for deck in decks:
-        if (
-            deck["id"] not in dir_cache
-            or deck["updated"] > dir_cache[deck["id"]]["updated"]
-        ):
-            to_download.append(deck["id"])
-
-    logging.info(f"To update: {len(to_download)}.")
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(
-        download_decks_pool(loop, to_download, path, dir_cache)
+        download_decks_pool(
+            loop, decks_to_update(username, dir_cache), path, dir_cache
+        )
     )
 
     logging.info(f"Successfully downloaded all decks for {username}.")
