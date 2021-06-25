@@ -1,8 +1,24 @@
+import os
 import xml.etree.cElementTree as et
 
 import architrice.utils as utils
 
 COCKATRICE_DECK_FILE_EXTENSION = ".cod"
+
+
+COCKATRICE_DECK_DIRECTORY = (
+    os.path.abspath(
+        os.path.join(
+            os.getenv("APPDATA"), "../Local/Cockatrice/Cockatrice/decks"
+        )
+    )
+    if os.name == "nt"
+    else ""
+)  # TODO
+
+
+def suggest_directory():
+    return COCKATRICE_DECK_DIRECTORY
 
 
 def cockatrice_name(card_tuple):
