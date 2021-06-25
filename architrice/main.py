@@ -2,13 +2,11 @@
 
 import argparse
 import os
-import json
 
 import actions
+import utils
 
-APP_NAME = "archtrice"
-DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
-CACHE_FILE = os.path.join(DATA_DIR, "cache.json")
+APP_NAME = "architrice"
 
 DESCRIPTION = f"""
 Download archidekt decks to a local directory. To set output path:
@@ -48,31 +46,24 @@ parser.add_argument(
     action="store_true",
     help="download latest deck for user",
 )
+parser.add_argument(
+    "-v",
+    "--verbosity",
+    dest="verbosity",
+    action="count",
+    help="increase output verbosity",
+)
+parser.add_argument(
+    "-q", "--quiet", dest="quiet", action="store_true", help="disable output"
+)
 args = parser.parse_args()
 
-# Load cached data
-if os.path.isfile(CACHE_FILE):
-    with open(CACHE_FILE, "r") as f:
-        cache = json.load(f)
-else:
-    cache = {"user": None, "deck": None, "path": None, "dirs": {}}
+utils.set_up_logger(
+    0 if args.quiet else args.verbosity + 1 if args.verbosity else 1
+)
 
-# Cache format:
-#   {
-#       "user": "archidekt username",
-#       "deck": "last deck downloaded",
-#       "path": "output directory",
-#       "dirs": {
-#           "PATH_TO_DIR": {
-#               "ARCHIDEKT_DECK_ID": {
-#                   "updated": timestamp
-#                   "name": "file name"
-#               } ... for each deck downloaded
-#           } ... for each deck directory
-#       }
-#   }
+cache = utils.load_cache()
 
-# TODO: may be better to use user id?
 user = args.user or cache["user"]
 deck = args.deck or cache["deck"]
 path = os.path.abspath(args.path) if args.path else cache["path"]
@@ -91,7 +82,6 @@ else:
     dir_cache = cache["dirs"][path]
 
 if path is None:
-    # TODO: tempfile
     print(
         f"No output file specified. Set one with {APP_NAME} -p"
         " OUTPUT_DIRECTORY."
@@ -116,9 +106,4 @@ elif args.path:
 else:
     print("No action specified. Nothing to do.")
 
-# Cache arguments for use in next usage.
-if not os.path.isdir(DATA_DIR):
-    os.mkdir(DATA_DIR)
-
-with open(CACHE_FILE, "w") as f:
-    json.dump(cache, f, indent=4)
+utils.save_cache(cache)

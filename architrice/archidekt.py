@@ -9,18 +9,7 @@ URL_BASE = "https://archidekt.com/api/decks/"
 
 SIDEBOARD_CATEGORIES = {"Commander", "Maybeboard", "Sideboard"}
 
-# Generic format:
-#   {
-#       "name": "Deck Title",
-#       "file_name": "deck_title",
-#       "description": "Description of deck",
-#       "main": [
-#           (quantity, card_name, is_dfc) ... for card in main deck
-#       ],
-#       "side": [
-#           (quantity, card_name, is_dfc) ... for card in sideboard
-#       ]
-#   }
+
 def deck_to_generic_format(deck):
     main = []
     side = []
@@ -53,13 +42,6 @@ def get_deck(deck_id, small=True):
     )
 
 
-# Generic format:
-#   [
-#       {
-#           "id": "ARCHIDEKT_DECK_ID",
-#           "updated": UTC_TIMESTAMP
-#       } ... for each deck
-#   ]
 def deck_list_to_generic_format(decks):
     ret = []
     for deck in decks:

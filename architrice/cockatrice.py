@@ -42,5 +42,6 @@ def deck_to_xml(deck, outfile):
 def save_deck(deck, path):
     deck_to_xml(deck, path)
 
+
 def create_file_name(deck_name):
     return utils.create_file_name(deck_name) + COCKATRICE_DECK_FILE_EXTENSION
