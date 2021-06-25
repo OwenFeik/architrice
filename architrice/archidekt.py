@@ -1,6 +1,6 @@
 import requests
 
-import utils
+import architrice.utils as utils
 
 URL_BASE = "https://archidekt.com/api/decks/"
 

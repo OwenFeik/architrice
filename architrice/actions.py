@@ -4,9 +4,9 @@ import datetime
 import logging
 import os
 
-import archidekt
-import cockatrice
-import utils
+import architrice.archidekt as archidekt
+import architrice.cockatrice as cockatrice
+import architrice.utils as utils
 
 source = archidekt
 target = cockatrice
@@ -92,7 +92,7 @@ def download_latest(username, path, dir_cache):
 
 
 # This is asynchronous so that it can use a ThreadPoolExecutor to speed up
-# perfoming may deck requests.
+# perfoming many deck requests.
 async def download_decks_pool(loop, decks, path, dir_cache):
     with concurrent.futures.ThreadPoolExecutor(
         max_workers=THREAD_POOL_MAX_WORKERS
@@ -107,7 +107,7 @@ async def download_decks_pool(loop, decks, path, dir_cache):
 
 
 def download_all(username, path, dir_cache):
-    logging.info(f"Downloading all decks for {username}.")
+    logging.info(f"Updating all decks for {username}.")
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(
@@ -116,4 +116,4 @@ def download_all(username, path, dir_cache):
         )
     )
 
-    logging.info(f"Successfully downloaded all decks for {username}.")
+    logging.info(f"Successfully updated all decks for {username}.")

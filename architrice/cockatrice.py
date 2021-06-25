@@ -1,6 +1,6 @@
 import xml.etree.cElementTree as et
 
-import utils
+import architrice.utils as utils
 
 COCKATRICE_DECK_FILE_EXTENSION = ".cod"
 

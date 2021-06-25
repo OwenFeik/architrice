@@ -1,0 +1,3 @@
+import architrice
+
+architrice.main()

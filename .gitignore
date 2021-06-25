@@ -1,5 +1,6 @@
 *.cod
 *.xml
 *.json
-__*
+__pycache*
+*.egg-info
 log
