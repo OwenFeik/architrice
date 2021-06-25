@@ -3,6 +3,7 @@
 import argparse
 import logging
 import os
+import sys
 
 import architrice.actions as actions
 import architrice.utils as utils
@@ -29,12 +30,15 @@ To download the most recently updated deck for a specific user:
 If no user has been set, the user will need to be specified as well through -u.
 """
 
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description=DESCRIPTION,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("-d", "--deck", dest="deck", help="set deck id to download")
+    parser.add_argument(
+        "-d", "--deck", dest="deck", help="set deck id to download"
+    )
     parser.add_argument(
         "-u", "--user", dest="user", help="set username to download decks of"
     )
@@ -64,6 +68,7 @@ def parse_args():
     )
     return parser.parse_args()
 
+
 def main():
     args = parse_args()
 
@@ -71,11 +76,14 @@ def main():
         0 if args.quiet else args.verbosity + 1 if args.verbosity else 1
     )
 
-    cache = utils.load_cache()
+    if len(sys.argv) == 1 and not utils.cache_exists():
+        cache = actions.setup_wizard()
+    else:
+        cache = utils.load_cache()
 
     user = args.user or cache["user"]
     deck = args.deck or cache["deck"]
-    path = os.path.abspath(args.path) if args.path else cache["path"]
+    path = utils.expand_path(args.path) if args.path else cache["path"]
 
     if os.path.isfile(path):
         logging.error(
@@ -120,6 +128,7 @@ def main():
         print("No action specified. Nothing to do.")
 
     utils.save_cache(cache)
+
 
 if __name__ == "__main__":
     main()

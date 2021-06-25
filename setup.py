@@ -7,5 +7,5 @@ setuptools.setup(
     author="Owen Feik",
     author_email="owen.h.feik@gmail.com",
     description="Utility to download Archidekt decklists for local use.",
-    packages=setuptools.find_packages()
+    packages=setuptools.find_packages(),
 )

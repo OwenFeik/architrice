@@ -9,6 +9,8 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 CACHE_FILE = os.path.join(DATA_DIR, "cache.json")
 LOG_FILE = os.path.join(DATA_DIR, "log")
 
+DEFAULT_CACHE = {"user": None, "deck": None, "path": None, "dirs": {}}
+
 
 def set_up_logger(verbosity=1):
     handlers = [logging.FileHandler(LOG_FILE)]
@@ -45,7 +47,7 @@ def load_cache():
         with open(CACHE_FILE, "r") as f:
             return json.load(f)
     else:
-        return {"user": None, "deck": None, "path": None, "dirs": {}}
+        return DEFAULT_CACHE
 
 
 def save_cache(cache):
@@ -56,6 +58,10 @@ def save_cache(cache):
         json.dump(cache, f, indent=4)
 
 
+def cache_exists():
+    return os.path.isfile(CACHE_FILE)
+
+
 def create_file_name(deck_name):
     return re.sub("[^a-z0-9_ ]+", "", deck_name.lower()).replace(" ", "_")
 
@@ -64,3 +70,7 @@ def parse_iso_8601(time_string):
     return datetime.datetime.strptime(
         time_string, "%Y-%m-%dT%H:%M:%S.%fZ"
     ).timestamp()
+
+
+def expand_path(path):
+    return os.path.abspath(os.path.expanduser(path))

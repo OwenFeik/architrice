@@ -61,7 +61,7 @@ def download_deck(deck_id, path, dir_cache):
 
     target.save_deck(deck, os.path.join(path, deck["file_name"]))
     deck_cache["updated"] = datetime.datetime.utcnow().timestamp()
-    logging.info(f"Successfully downloaded {deck_id}.")
+    logging.info(f"Successfully downloaded {deck['name']} ({deck_id}).")
 
 
 def decks_to_update(username, dir_cache):
@@ -117,3 +117,10 @@ def download_all(username, path, dir_cache):
     )
 
     logging.info(f"Successfully updated all decks for {username}.")
+
+
+def setup_wizard():
+    cache = utils.DEFAULT_CACHE
+    cache["user"] = input("Archidekt username > ")
+    cache["path"] = utils.expand_path(input("Output directory > "))
+    return cache
