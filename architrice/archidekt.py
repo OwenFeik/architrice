@@ -1,5 +1,7 @@
 import requests
 
+import utils
+
 URL_BASE = "https://archidekt.com/api/decks/"
 
 # Note that the api is sensitive to double slashes so /api/decks//id for
@@ -10,6 +12,7 @@ SIDEBOARD_CATEGORIES = {"Commander", "Maybeboard", "Sideboard"}
 # Generic format:
 #   {
 #       "name": "Deck Title",
+#       "file_name": "deck_title",
 #       "description": "Description of deck",
 #       "main": [
 #           (quantity, card_name, is_dfc) ... for card in main deck
@@ -50,7 +53,26 @@ def get_deck(deck_id, small=True):
     )
 
 
-def get_decks(user_name):
+# Generic format:
+#   [
+#       {
+#           "id": "ARCHIDEKT_DECK_ID",
+#           "updated": UTC_TIMESTAMP
+#       } ... for each deck
+#   ]
+def deck_list_to_generic_format(decks):
+    ret = []
+    for deck in decks:
+        ret.append(
+            {
+                "id": str(deck["id"]),
+                "updated": utils.parse_iso_8601(deck["updatedAt"]),
+            }
+        )
+    return ret
+
+
+def get_deck_list(user_name):
     decks = []
     url = URL_BASE + f"cards/?owner={user_name}&ownerexact=true"
     while url:
@@ -58,7 +80,7 @@ def get_decks(user_name):
         decks.extend(j["results"])
         url = j["next"]
 
-    return decks
+    return deck_list_to_generic_format(decks)
 
 
 def belongs_in_sideboard(categories):

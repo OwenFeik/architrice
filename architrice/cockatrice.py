@@ -1,5 +1,6 @@
 import xml.etree.cElementTree as et
-import re
+
+import utils
 
 COCKATRICE_DECK_FILE_EXTENSION = ".cod"
 
@@ -38,8 +39,8 @@ def deck_to_xml(deck, outfile):
     et.ElementTree(root).write(outfile, xml_declaration=True, encoding="UTF-8")
 
 
+def save_deck(deck, path):
+    deck_to_xml(deck, path)
+
 def create_file_name(deck_name):
-    return (
-        re.sub("[^a-z_ ]+", "", deck_name.lower()).replace(" ", "_")
-        + COCKATRICE_DECK_FILE_EXTENSION
-    )
+    return utils.create_file_name(deck_name) + COCKATRICE_DECK_FILE_EXTENSION
