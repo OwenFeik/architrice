@@ -12,7 +12,13 @@ LOG_FILE = os.path.join(DATA_DIR, "log")
 DEFAULT_CACHE = {"user": None, "deck": None, "path": None, "dirs": {}}
 
 
+def ensure_data_dir():
+    if not os.path.isdir(DATA_DIR):
+        os.mkdir(DATA_DIR)
+
+
 def set_up_logger(verbosity=1):
+    ensure_data_dir()
     handlers = [logging.FileHandler(LOG_FILE)]
 
     if verbosity != 0:
@@ -51,9 +57,7 @@ def load_cache():
 
 
 def save_cache(cache):
-    if not os.path.isdir(DATA_DIR):
-        os.mkdir(DATA_DIR)
-
+    ensure_data_dir()
     with open(CACHE_FILE, "w") as f:
         json.dump(cache, f, indent=4)
 
