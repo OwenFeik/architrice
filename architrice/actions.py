@@ -120,7 +120,17 @@ def download_all(username, path, dir_cache):
 
 
 def setup_wizard():
+    PROMPT = " > "
+
     cache = utils.DEFAULT_CACHE
-    cache["user"] = input("Archidekt username > ")
-    cache["path"] = utils.expand_path(input("Output directory > "))
+    cache["user"] = input(f"Archidekt username{PROMPT}")
+
+    path = target.suggest_directory()
+    if (os.path.isdir(path)) and input(
+        f"Found Cockatrice deck directory at {path}. "
+        f"Output decklists here? (y/n){PROMPT}"
+    ) in ["y", "yes"]:
+        cache["path"] = path
+    else:
+        cache["path"] = utils.expand_path(input(f"Output directory{PROMPT}"))
     return cache

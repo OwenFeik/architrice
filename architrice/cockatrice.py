@@ -13,8 +13,8 @@ COCKATRICE_DECK_DIRECTORY = (
         )
     )
     if os.name == "nt"
-    else ""
-)  # TODO
+    else os.path.expanduser("~/.local/share/Cockatrice/Cockatrice/decks")
+)
 
 
 def suggest_directory():
