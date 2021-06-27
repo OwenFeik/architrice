@@ -54,12 +54,16 @@ def deck_list_to_generic_format(decks):
     return ret
 
 
-def get_deck_list(user_name):
+def get_deck_list(username, allpages=True):
     decks = []
-    url = URL_BASE + f"cards/?owner={user_name}&ownerexact=true"
+    url = URL_BASE + f"cards/?owner={username}&ownerexact=true"
     while url:
         j = requests.get(url).json()
         decks.extend(j["results"])
+
+        if not allpages:
+            break
+
         url = j["next"]
 
     return deck_list_to_generic_format(decks)
@@ -67,3 +71,7 @@ def get_deck_list(user_name):
 
 def belongs_in_sideboard(categories):
     return bool(SIDEBOARD_CATEGORIES.intersection(categories))
+
+
+def verify_user(username):
+    return bool(len(get_deck_list(username, False)))

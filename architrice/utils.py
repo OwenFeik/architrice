@@ -9,7 +9,7 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 CACHE_FILE = os.path.join(DATA_DIR, "cache.json")
 LOG_FILE = os.path.join(DATA_DIR, "log")
 
-DEFAULT_CACHE = {"user": None, "deck": None, "path": None, "dirs": {}}
+DEFAULT_CACHE = {"sources": {}, "dirs": {}}
 
 
 def ensure_data_dir():
@@ -36,12 +36,17 @@ def set_up_logger(verbosity=1):
 
 # Cache format:
 #   {
-#       "user": "archidekt username",
-#       "deck": "last deck downloaded",
-#       "path": "output directory",
+#       "sources": [
+#           "SOURCE_NAME": [
+#               {
+#                   "user": "USER_NAME",
+#                   "dir": "PATH_TO_DIR"
+#               } ... for each user
+#           ] ... for each source
+#       ],
 #       "dirs": {
 #           "PATH_TO_DIR": {
-#               "ARCHIDEKT_DECK_ID": {
+#               "DECK_ID": {
 #                   "updated": timestamp
 #                   "name": "file name"
 #               } ... for each deck downloaded
@@ -52,8 +57,12 @@ def load_cache():
     if os.path.isfile(CACHE_FILE):
         with open(CACHE_FILE, "r") as f:
             return json.load(f)
-    else:
-        return DEFAULT_CACHE
+    return None
+
+def get_dir_cache(cache, path):
+    if path not in cache["dirs"]:
+        cache["dirs"][path] = {}
+    return cache["dirs"][path]
 
 
 def save_cache(cache):
@@ -78,3 +87,11 @@ def parse_iso_8601(time_string):
 
 def expand_path(path):
     return os.path.abspath(os.path.expanduser(path))
+
+def check_dir(path):
+    if os.path.isfile(path):
+        return False
+    if not os.path.isdir(path):
+        os.makedirs(path)
+        logging.info(f"Created output directory {path}.")
+    return True

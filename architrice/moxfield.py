@@ -2,9 +2,10 @@ import requests
 
 import architrice.utils as utils
 
-URL_BASE = "https://api.moxfield.com/v2/"
+URL_BASE = "https://api.moxfield.com/"
 DECK_LIST_PAGE_SIZE = 100
 SIDEBOARD_CATEGORIES = ["sideboard", "maybeboard", "commanders"]
+REQUEST_OK = 200
 
 
 def is_dfc(layout):
@@ -38,7 +39,7 @@ def deck_to_generic_format(deck):
 
 def get_deck(deck_id):
     return deck_to_generic_format(
-        requests.get(URL_BASE + f"decks/all/{deck_id}").json()
+        requests.get(URL_BASE + f"v2/decks/all/{deck_id}").json()
     )
 
 
@@ -54,18 +55,25 @@ def deck_list_to_generic_format(decks):
     return ret
 
 
-def get_deck_list(user_name):
+def get_deck_list(username, allpages=True):
     decks = []
     i = 1
     while True:
         j = requests.get(
             URL_BASE
-            + f"users/{user_name}/decks"
+            + f"v2/users/{username}/decks"
             + f"?pageSize={DECK_LIST_PAGE_SIZE}&pageNumber={i}"
         ).json()
         decks.extend(j["data"])
         i += 1
-        if i > j["totalPages"]:
+        if i > j["totalPages"] or not allpages:
             break
 
     return deck_list_to_generic_format(decks)
+
+
+def verify_user(username):
+    return (
+        requests.get(URL_BASE + f"v1/users/{username}").status_code
+        == REQUEST_OK
+    )

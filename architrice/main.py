@@ -3,10 +3,19 @@
 import argparse
 import logging
 import os
+import re
 import sys
 
 import architrice.actions as actions
+import architrice.cli as cli
 import architrice.utils as utils
+
+# Sources
+import architrice.archidekt as archidekt
+import architrice.moxfield as moxfield
+
+# Targets
+import architrice.cockatrice as cockatrice
 
 APP_NAME = "architrice"
 
@@ -30,6 +39,86 @@ To download the most recently updated deck for a specific user:
 If no user has been set, the user will need to be specified as well through -u.
 """
 
+SOURCES = {
+    "Archidekt": {
+        "name": "Archidekt",
+        "names": ["Archidekt", "A"],
+        "api": archidekt,
+    },
+    "Moxfield": {
+        "name": "Moxfield",
+        "names": ["Moxfield", "M"],
+        "api": moxfield,
+    },
+}
+
+
+def source_picker():
+    return SOURCES[
+        cli.get_choice(
+            list(SOURCES.keys()),
+            "Download from which supported decklist website?",
+            [s["names"] for s in SOURCES.values()],
+        )
+    ]
+
+
+def add_source(cache):
+    source = source_picker()
+    target = cockatrice
+
+    while not source["api"].verify_user(
+        (user := cli.get_string(source["name"] + " username"))
+    ):
+        print("Couldn't find any public decks for this user. Try again.")
+
+    if cache["dirs"] and cli.get_decision("Use existing output directory?"):
+        if len(cache["dirs"]) == 1:
+            path = list(cache["dirs"].keys())[0]
+        else:
+            path = cli.get_choice(
+                list(cache["dirs"].keys()),
+                "Which existing directory should be used for these decks?",
+            )
+    else:
+        path = target.suggest_directory()
+        if not (
+            (os.path.isdir(path))
+            and cli.get_decision(
+                f"Found Cockatrice deck directory at {path}."
+                " Output decklists here?"
+            )
+        ):
+            path = cli.get_path("Output directory")
+
+    if cache["sources"].get(source["name"]) is None:
+        cache["sources"][source["name"]] = []
+    cache["sources"][source["name"]].append({"user": user, "dir": path})
+
+def delete_source(cache):
+    options = []
+    for s in cache["sources"]:
+        for t in cache["sources"][s]:
+            user = t["user"]
+            path = t["dir"]
+            options.append(f"{s}: {user} ({path})")
+
+    if not options:
+        logging.info("No targets exist, ignoring delete option.")
+        return
+
+    target = cli.get_choice(options, "Delete which target?")
+    m = re.match(r"^(?P<source>\w+): (?P<user>\w+) \((?P<path>.+)\)$", target)
+    source = m.group("source")
+    user = m.group("user")
+    path = m.group("path")
+    for t in cache["sources"][source]:
+        if t["user"] == user and t["dir"] == path:
+            cache["sources"][source].remove(t)
+            return
+
+    if not cache["sources"][source]:
+        del cache["sources"][source] 
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -37,13 +126,19 @@ def parse_args():
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
-        "-d", "--deck", dest="deck", help="set deck id to download"
-    )
-    parser.add_argument(
         "-u", "--user", dest="user", help="set username to download decks of"
     )
     parser.add_argument(
+        "-s", "--source", dest="source", help="set source website"
+    )
+    parser.add_argument(
         "-p", "--path", dest="path", help="set deck file output directory"
+    )
+    parser.add_argument(
+        "-n", "--new", dest="new", help="launch wizard to add a new target", action="store_true"
+    )
+    parser.add_argument(
+        "-d", "--delete", dest="delete", help="launch wizard or use options to delete a target", action="store_true"
     )
     parser.add_argument(
         "-l",
@@ -76,59 +171,58 @@ def main():
         0 if args.quiet else args.verbosity + 1 if args.verbosity else 1
     )
 
-    if len(sys.argv) == 1 and not utils.cache_exists():
-        cache = actions.setup_wizard()
-    else:
-        cache = utils.load_cache()
+    cache = utils.load_cache()
+    if len(sys.argv) == 1 and not cache["sources"]:
+        cache = utils.DEFAULT_CACHE 
+        add_source(cache)
+    elif args.new:
+        add_source(cache)
 
-    user = args.user or cache["user"]
-    deck = args.deck or cache["deck"]
-    path = utils.expand_path(args.path) if args.path else cache["path"]
-
-    if os.path.isfile(path):
-        logging.error(
-            f"Fatal: Output directory {path} already exists and is a file."
+    if args.source and args.path and args.user:
+        logging.info(
+            f"Adding new source: {args.user} on {args.source} outputting to "
+            + args.path
         )
-        exit()
-
-    if not os.path.isdir(path):
-        os.makedirs(path)
-        logging.info(f"Created output directory {path}.")
-
-    cache.update({"user": user, "deck": deck, "path": path})
-
-    if cache["dirs"].get(path) is None:
-        cache["dirs"][path] = dir_cache = {}
-    else:
-        dir_cache = cache["dirs"][path]
-
-    if path is None:
-        print(
-            f"No output file specified. Set one with {APP_NAME} -p"
-            " OUTPUT_DIRECTORY."
+    elif args.source or args.path or args.user:
+        logging.info(
+            "To add a new source with command line options, source, user and"
+            " path must be specified."
         )
-    elif args.latest:
-        if not user:
-            print(
-                f"No Archidekt user set. Set one with {APP_NAME} -u"
-                " ARCHIDEKT_USERNAME to download their latest deck."
-            )
-        else:
-            print(f"Downloading latest deck for Archidekt user {user}.")
-            actions.download_latest(user, path, dir_cache)
-    elif user:
-        print(f"Updating all decks for Archidekt user {user}.")
-        actions.download_all(user, path, dir_cache)
-    elif deck:
-        print(f"Updating deck with Archidekt id {deck}.")
-        actions.download_deck(deck, path, dir_cache)
-    elif args.path:
-        print(f'Set output directory to "{path}".')
-    else:
-        print("No action specified. Nothing to do.")
+
+    if args.delete:
+        delete_source(cache)
+
+    for source in cache["sources"]:
+        api = SOURCES[source]["api"]
+        for target in cache["sources"][source]:
+            path = target["dir"]
+            user = target["user"]
+
+            if not utils.check_dir(path):
+                logging.error(
+                    f"Output directory {path} already exists and is a file."
+                    f"Skipping {source} user {user} download."
+                )
+                continue
+
+            if args.latest:
+                actions.download_latest(
+                    api,
+                    cockatrice,
+                    user,
+                    path,
+                    utils.get_dir_cache(cache, path),
+                )
+            else:
+                actions.download_all(
+                    api,
+                    cockatrice,
+                    user,
+                    path,
+                    utils.get_dir_cache(cache, path),
+                )
 
     utils.save_cache(cache)
-
 
 if __name__ == "__main__":
     main()

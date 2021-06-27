@@ -8,13 +8,6 @@ import architrice.archidekt as archidekt
 import architrice.cockatrice as cockatrice
 import architrice.utils as utils
 
-source = archidekt
-target = cockatrice
-
-# The reason for this "source" and "target" setup is that it allows future
-# drop in replacements for other sources (different deck hosting websites)
-# and targets (different mtg clients).
-#
 # To facilitate this, generic intermediate formats for decks and lists
 # thereof are defined as follows.
 #
@@ -42,7 +35,7 @@ target = cockatrice
 THREAD_POOL_MAX_WORKERS = 12
 
 
-def download_deck(deck_id, path, dir_cache):
+def download_deck(api, target, deck_id, path, dir_cache):
     if deck_id in dir_cache:
         logging.debug(f"Updating existing deck {deck_id}.")
         deck_cache = dir_cache[deck_id]
@@ -50,7 +43,7 @@ def download_deck(deck_id, path, dir_cache):
         logging.debug(f"Downloading new deck {deck_id}.")
         dir_cache[deck_id] = deck_cache = {"name": None, "updated": 0}
 
-    deck = source.get_deck(deck_id)
+    deck = api.get_deck(deck_id)
 
     if deck_cache["name"]:
         deck["file_name"] = deck_cache["name"]
@@ -64,8 +57,8 @@ def download_deck(deck_id, path, dir_cache):
     logging.info(f"Successfully downloaded {deck['name']} ({deck_id}).")
 
 
-def decks_to_update(username, dir_cache):
-    decks = source.get_deck_list(username)
+def decks_to_update(api, username, dir_cache):
+    decks = api.get_deck_list(username)
     logging.info(f"Total decks: {len(decks)}.")
 
     to_download = []
@@ -81,56 +74,48 @@ def decks_to_update(username, dir_cache):
     return to_download
 
 
-def download_latest(username, path, dir_cache):
-    to_download = decks_to_update(username, dir_cache)
+def download_latest(api, target, username, path, dir_cache):
+    to_download = decks_to_update(api, username, dir_cache)
     if len(to_download) == 0:
         logging.info("All decks up to date.")
     else:
         download_deck(
-            max(to_download, key=lambda d: d["updated"])["id"], path, dir_cache
+            api,
+            target,
+            max(to_download, key=lambda d: d["updated"])["id"],
+            path,
+            dir_cache,
         )
 
 
 # This is asynchronous so that it can use a ThreadPoolExecutor to speed up
 # perfoming many deck requests.
-async def download_decks_pool(loop, decks, path, dir_cache):
+async def download_decks_pool(api, target, loop, decks, path, dir_cache):
     with concurrent.futures.ThreadPoolExecutor(
         max_workers=THREAD_POOL_MAX_WORKERS
     ) as executor:
         futures = [
             loop.run_in_executor(
-                executor, download_deck, deck_id, path, dir_cache
+                executor, download_deck, api, target, deck_id, path, dir_cache
             )
             for deck_id in decks
         ]
         return await asyncio.gather(*futures)
 
 
-def download_all(username, path, dir_cache):
+def download_all(api, target, username, path, dir_cache):
     logging.info(f"Updating all decks for {username}.")
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(
         download_decks_pool(
-            loop, decks_to_update(username, dir_cache), path, dir_cache
+            api,
+            target,
+            loop,
+            decks_to_update(api, username, dir_cache),
+            path,
+            dir_cache,
         )
     )
 
     logging.info(f"Successfully updated all decks for {username}.")
-
-
-def setup_wizard():
-    PROMPT = " > "
-
-    cache = utils.DEFAULT_CACHE
-    cache["user"] = input(f"Archidekt username{PROMPT}")
-
-    path = target.suggest_directory()
-    if (os.path.isdir(path)) and input(
-        f"Found Cockatrice deck directory at {path}. "
-        f"Output decklists here? (y/n){PROMPT}"
-    ) in ["y", "yes"]:
-        cache["path"] = path
-    else:
-        cache["path"] = utils.expand_path(input(f"Output directory{PROMPT}"))
-    return cache
