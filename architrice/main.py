@@ -95,6 +95,7 @@ def add_source(cache):
         cache["sources"][source["name"]] = []
     cache["sources"][source["name"]].append({"user": user, "dir": path})
 
+
 def delete_source(cache):
     options = []
     for s in cache["sources"]:
@@ -118,7 +119,8 @@ def delete_source(cache):
             return
 
     if not cache["sources"][source]:
-        del cache["sources"][source] 
+        del cache["sources"][source]
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -135,10 +137,18 @@ def parse_args():
         "-p", "--path", dest="path", help="set deck file output directory"
     )
     parser.add_argument(
-        "-n", "--new", dest="new", help="launch wizard to add a new target", action="store_true"
+        "-n",
+        "--new",
+        dest="new",
+        help="launch wizard to add a new target",
+        action="store_true",
     )
     parser.add_argument(
-        "-d", "--delete", dest="delete", help="launch wizard or use options to delete a target", action="store_true"
+        "-d",
+        "--delete",
+        dest="delete",
+        help="launch wizard or use options to delete a target",
+        action="store_true",
     )
     parser.add_argument(
         "-l",
@@ -173,7 +183,7 @@ def main():
 
     cache = utils.load_cache()
     if len(sys.argv) == 1 and not cache["sources"]:
-        cache = utils.DEFAULT_CACHE 
+        cache = utils.DEFAULT_CACHE
         add_source(cache)
     elif args.new:
         add_source(cache)
@@ -223,6 +233,7 @@ def main():
                 )
 
     utils.save_cache(cache)
+
 
 if __name__ == "__main__":
     main()

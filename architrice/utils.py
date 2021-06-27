@@ -59,6 +59,7 @@ def load_cache():
             return json.load(f)
     return None
 
+
 def get_dir_cache(cache, path):
     if path not in cache["dirs"]:
         cache["dirs"][path] = {}
@@ -87,6 +88,7 @@ def parse_iso_8601(time_string):
 
 def expand_path(path):
     return os.path.abspath(os.path.expanduser(path))
+
 
 def check_dir(path):
     if os.path.isfile(path):
