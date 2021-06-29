@@ -25,7 +25,7 @@ def get_choice(options, prompt, keys=None):
 
 
 def get_decision(prompt, default=True):
-    opts = "(" + "Y" if default else "y" + "/" + "n" if default else "N" + ")"
+    opts = "(" + ("Y" if default else "y") + "/" + ("n" if default else "N") + ")"
     if (d := input(f"{prompt} {opts} {PROMPT}").strip().lower()) in [
         "y",
         "yes",

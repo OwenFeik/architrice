@@ -43,12 +43,12 @@ Replace -n with -d to delete instead of creating.
 SOURCES = {
     "Archidekt": {
         "name": "Archidekt",
-        "names": ["Archidekt", "A"],
+        "names": ["archidekt", "a"],
         "api": archidekt,
     },
     "Moxfield": {
         "name": "Moxfield",
-        "names": ["Moxfield", "M"],
+        "names": ["moxfield", "m"],
         "api": moxfield,
     },
 }
@@ -58,9 +58,13 @@ def get_source(name, picker=False):
     if name in SOURCES:
         return SOURCES[name]
     else:
-        for s in SOURCES.values():
-            if name in s["names"]:
-                return s
+        if name:
+            name = name.strip().lower()
+            for s in SOURCES.values():
+                if name in s["names"]:
+                    return s
+        if picker:
+            return source_picker()
     return None
 
 
@@ -79,9 +83,11 @@ def add_source(cache, source=None, user=None, path=None):
     target = cockatrice
 
     if user:
+        logging.info("Verifying " + source["name"] + f" user {user}.")
         if not source["api"].verify_user(user):
             logging.error(f"Couldn't verify user {user}. Ignoring new target.")
             return
+        logging.info("Verified user.")
     else:
         while not source["api"].verify_user(
             (user := cli.get_string(source["name"] + " username"))
@@ -98,6 +104,7 @@ def add_source(cache, source=None, user=None, path=None):
         if cache["dirs"] and cli.get_decision("Use existing output directory?"):
             if len(cache["dirs"]) == 1:
                 path = list(cache["dirs"].keys())[0]
+                logging.info(f"Only one existing directory, defaulting to {path}.")
             else:
                 path = cli.get_choice(
                     list(cache["dirs"].keys()),
@@ -220,7 +227,6 @@ def main():
 
     cache = utils.load_cache()
     if len(sys.argv) == 1 and not cache["sources"]:
-        cache = utils.DEFAULT_CACHE
         add_source(cache)
     elif args.new:
         add_source(cache, args.source, args.user, args.path)

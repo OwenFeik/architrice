@@ -57,7 +57,7 @@ def load_cache():
     if os.path.isfile(CACHE_FILE):
         with open(CACHE_FILE, "r") as f:
             return json.load(f)
-    return None
+    return DEFAULT_CACHE
 
 
 def get_dir_cache(cache, path):
