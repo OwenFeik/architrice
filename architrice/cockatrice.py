@@ -8,9 +8,7 @@ COCKATRICE_DECK_FILE_EXTENSION = ".cod"
 
 COCKATRICE_DECK_DIRECTORY = (
     os.path.abspath(
-        os.path.join(
-            os.getenv("APPDATA"), "../Local/Cockatrice/Cockatrice/decks"
-        )
+        os.path.join(os.getenv("LOCALAPPDATA"), "Cockatrice/Cockatrice/decks")
     )
     if os.name == "nt"
     else os.path.expanduser("~/.local/share/Cockatrice/Cockatrice/decks")

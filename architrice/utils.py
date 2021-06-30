@@ -5,9 +5,30 @@ import os
 import re
 import sys
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+DEBUG = False
+
+
+def get_data_dir():
+    if DEBUG:
+        return os.path.join(os.path.dirname(__file__), "data")
+
+    if os.name == "nt":
+        return os.path.join(os.getenv("LOCALAPPDATA", "architrice"))
+    else:
+        DATA_HOME_ENV_VAR = "XDG_DATA_HOME"
+        DATA_HOME_FALLBACK = "~/.local/share"
+
+        return os.path.join(
+            os.path.expanduser(
+                os.getenv(DATA_HOME_ENV_VAR) or DATA_HOME_FALLBACK
+            ),
+            "architrice",
+        )
+
+
+DATA_DIR = get_data_dir()
 CACHE_FILE = os.path.join(DATA_DIR, "cache.json")
-LOG_FILE = os.path.join(DATA_DIR, "log")
+LOG_FILE = os.path.join(DATA_DIR, "architrice.log")
 
 DEFAULT_CACHE = {"sources": {}, "dirs": {}}
 

@@ -104,7 +104,9 @@ def add_source(cache, source=None, user=None, path=None):
         if cache["dirs"] and cli.get_decision("Use existing output directory?"):
             if len(cache["dirs"]) == 1:
                 path = list(cache["dirs"].keys())[0]
-                logging.info(f"Only one existing directory, defaulting to {path}.")
+                logging.info(
+                    f"Only one existing directory, defaulting to {path}."
+                )
             else:
                 path = cli.get_choice(
                     list(cache["dirs"].keys()),
@@ -160,7 +162,7 @@ def delete_source(cache, source=None, user=None, path=None):
     for t in cache["sources"][source]:
         if t["user"] == user and t["dir"] == path:
             cache["sources"][source].remove(t)
-            return
+            break
 
     if not cache["sources"][source]:
         del cache["sources"][source]
