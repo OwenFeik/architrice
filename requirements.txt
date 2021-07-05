@@ -1,1 +1,2 @@
-requests>=2
+bs4>=4.9 # Web scraping
+requests>=2 # Web requests

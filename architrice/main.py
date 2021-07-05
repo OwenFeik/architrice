@@ -39,6 +39,7 @@ user and path as in
 Replace -n with -d to delete instead of creating. 
 """
 
+
 def get_source(name, picker=False):
     if name:
         name = name.lower()
