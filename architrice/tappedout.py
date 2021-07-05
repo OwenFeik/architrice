@@ -1,7 +1,10 @@
 import bs4
 import re
+import time
 
 import requests
+
+import architrice.utils as utils
 
 URL_BASE = "https://tappedout.net/"
 
@@ -77,7 +80,73 @@ def get_deck(deck_id):
     return deck_to_generic_format(mtga_deck, name, description, commanders)
 
 
+def age_string_to_timestamp(string):
+    if string == "Updated a few seconds ago.":
+        return time.time() - 60
+    elif (
+        m := re.match(
+            r"Updated (?P<n>\d+) (?P<unit>minute|hour|day|month|year)s? ago\.",
+            string,
+        )
+    ) :
+        n = int(m.group("n"))
+        unit = {
+            "minute": 60,
+            "hour": 60 * 60,
+            "day": 60 * 60 * 24,
+            "month": 60 * 60 * 24 * 28,
+            "year": 60 * 60 * 24 * 365,
+        }[m.group("unit")]
+        return time.time() - n * unit
+    return time.time()
+
+
 def get_deck_list(username, allpages=True):
     decks = []
-    while True:
-        requests.get(URL_BASE + f"users/{username}/mtg-decks/")
+
+    url_base = URL_BASE + f"users/{username}/mtg-decks/"
+
+    html = requests.get(url_base).content.decode()
+    soup = bs4.BeautifulSoup(html, "html.parser")
+
+    try:
+        pages = int(
+            soup.select_one("ul.pagination")
+            .find_all("li")[-1]
+            .select_one("a.page-btn")
+            .text
+        )
+    except AttributeError:
+        # If we hit a None on one of the selects, no pagination ul exists
+        # as there is only a single page.
+        pages = 1
+
+    i = 1
+
+    HREF_TO_ID_REGEX = re.compile(r"^.*/(.*)/$")
+
+    while i <= pages:
+        for chunk in utils.group_iterable(soup.select("div.contents"), 3):
+            # Each set of three divs is a single deck entry. The first div is
+            # the colour breakdown graph, which is not relevant.
+
+            _, name_div, details_div = chunk
+
+            deck_id = re.sub(
+                HREF_TO_ID_REGEX,
+                r"\1",
+                name_div.select_one("h3.name > a").get("href"),
+            )
+
+            for h5 in details_div.select("h5"):
+                if "Updated" in h5.text:
+                    updated = age_string_to_timestamp(h5.text.strip())
+                    break
+
+            decks.append({"id": deck_id, "updated": updated})
+
+        i += 1
+        html = requests.get(url_base + f"?page={i}").content.decode()
+        soup = bs4.BeautifulSoup(html, "html.parser")
+
+    return decks

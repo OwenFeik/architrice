@@ -1,4 +1,5 @@
 import datetime
+import itertools
 import json
 import logging
 import os
@@ -118,3 +119,10 @@ def check_dir(path):
         os.makedirs(path)
         logging.info(f"Created output directory {path}.")
     return True
+
+
+# Chunk an iterable into n size chunks
+# source: https://docs.python.org/3/library/itertools.html#itertools-recipes
+def group_iterable(iterable, n, fillvalue=None):
+    args = [iter(iterable)] * n
+    return itertools.zip_longest(*args, fillvalue=fillvalue)
