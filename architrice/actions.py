@@ -4,9 +4,8 @@ import datetime
 import logging
 import os
 
-import architrice.archidekt as archidekt
-import architrice.cockatrice as cockatrice
-import architrice.utils as utils
+from . import cockatrice
+from . import utils
 
 # To facilitate this, generic intermediate formats for decks and lists
 # thereof are defined as follows.
@@ -104,7 +103,7 @@ async def download_decks_pool(api, target, loop, decks, path, dir_cache):
 
 
 def download_all(api, target, username, path, dir_cache):
-    logging.info(f"Updating all decks for {username}.")
+    logging.info(f"Updating all decks for {username} on {api.SOURCE_NAME}.")
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(

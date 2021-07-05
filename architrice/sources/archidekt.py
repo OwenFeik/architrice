@@ -1,6 +1,9 @@
 import requests
 
-import architrice.utils as utils
+from .. import utils
+
+SOURCE_NAME = "Archidekt"
+SOURCE_SHORT = "A"
 
 URL_BASE = "https://archidekt.com/api/decks/"
 

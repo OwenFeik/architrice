@@ -1,6 +1,9 @@
 import requests
 
-import architrice.utils as utils
+from .. import utils
+
+SOURCE_NAME = "Moxfield"
+SOURCE_SHORT = "M"
 
 URL_BASE = "https://api.moxfield.com/"
 DECK_LIST_PAGE_SIZE = 100

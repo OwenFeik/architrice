@@ -1,9 +1,9 @@
-import architrice.utils as utils
+from . import utils
 
 PROMPT = "> "
 
 
-def get_choice(options, prompt, keys=None):
+def get_choice(options, prompt, values=None):
     print(prompt)
     for i, option in enumerate(options):
         print(f"\t[{i + 1}] {option}")
@@ -12,16 +12,18 @@ def get_choice(options, prompt, keys=None):
 
     while True:
         choice = input(PROMPT).strip()
-        if choice.isnumeric() and 0 <= (i := int(choice) - 1) < len(options):
-            return options[i]
-        elif choice and keys:
-            for keyset in keys:
-                if choice in keyset:
-                    return options[keys.index(keyset)]
-            else:
-                print(FAILURE_MESSAGE)
+
+        if choice in options:
+            i = options.index(choice)
+        elif choice.isnumeric() and 0 <= (i := int(choice) - 1) < len(options):
+            pass
         else:
             print(FAILURE_MESSAGE)
+            continue
+
+        if values:
+            return values[i]
+        return options[i]
 
 
 def get_decision(prompt, default=True):

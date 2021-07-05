@@ -1,11 +1,9 @@
 import os
 import xml.etree.cElementTree as et
 
-import architrice.utils as utils
+from . import utils
 
 COCKATRICE_DECK_FILE_EXTENSION = ".cod"
-
-
 COCKATRICE_DECK_DIRECTORY = (
     os.path.abspath(
         os.path.join(os.getenv("LOCALAPPDATA"), "Cockatrice/Cockatrice/decks")

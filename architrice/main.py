@@ -6,16 +6,15 @@ import os
 import re
 import sys
 
-import architrice.actions as actions
-import architrice.cli as cli
-import architrice.utils as utils
+from . import actions
+from . import cli
+from . import utils
 
 # Sources
-import architrice.archidekt as archidekt
-import architrice.moxfield as moxfield
+from . import sources
 
 # Targets
-import architrice.cockatrice as cockatrice
+from . import cockatrice
 
 APP_NAME = "architrice"
 
@@ -40,42 +39,23 @@ user and path as in
 Replace -n with -d to delete instead of creating. 
 """
 
-SOURCES = {
-    "Archidekt": {
-        "name": "Archidekt",
-        "names": ["archidekt", "a"],
-        "api": archidekt,
-    },
-    "Moxfield": {
-        "name": "Moxfield",
-        "names": ["moxfield", "m"],
-        "api": moxfield,
-    },
-}
-
-
 def get_source(name, picker=False):
-    if name in SOURCES:
-        return SOURCES[name]
-    else:
-        if name:
-            name = name.strip().lower()
-            for s in SOURCES.values():
-                if name in s["names"]:
-                    return s
-        if picker:
-            return source_picker()
+    if name:
+        name = name.lower()
+        for s in sources.sourcelist:
+            if s.SOURCE_NAME.lower() == name or s.SOURCE_SHORT.lower() == name:
+                return s
+    if picker:
+        return source_picker()
     return None
 
 
 def source_picker():
-    return SOURCES[
-        cli.get_choice(
-            list(SOURCES.keys()),
-            "Download from which supported decklist website?",
-            [s["names"] for s in SOURCES.values()],
-        )
-    ]
+    return cli.get_choice(
+        [s.SOURCE_NAME for s in sources.sourcelist],
+        "Download from which supported decklist website?",
+        sources.sourcelist,
+    )
 
 
 def add_source(cache, source=None, user=None, path=None):
@@ -83,14 +63,14 @@ def add_source(cache, source=None, user=None, path=None):
     target = cockatrice
 
     if user:
-        logging.info("Verifying " + source["name"] + f" user {user}.")
-        if not source["api"].verify_user(user):
+        logging.info("Verifying " + source.SOURCE_NAME + f" user {user}.")
+        if not source.verify_user(user):
             logging.error(f"Couldn't verify user {user}. Ignoring new target.")
             return
         logging.info("Verified user.")
     else:
-        while not source["api"].verify_user(
-            (user := cli.get_string(source["name"] + " username"))
+        while not source.verify_user(
+            (user := cli.get_string(source.SOURCE_NAME + " username"))
         ):
             print("Couldn't find any public decks for this user. Try again.")
 
@@ -123,9 +103,9 @@ def add_source(cache, source=None, user=None, path=None):
             ):
                 path = cli.get_path("Output directory")
 
-    if cache["sources"].get(source["name"]) is None:
-        cache["sources"][source["name"]] = []
-    cache["sources"][source["name"]].append({"user": user, "dir": path})
+    if cache["sources"].get(source.SOURCE_NAME) is None:
+        cache["sources"][source.SOURCE_NAME] = []
+    cache["sources"][source.SOURCE_NAME].append({"user": user, "dir": path})
 
 
 def delete_source(cache, source=None, user=None, path=None):
@@ -133,7 +113,7 @@ def delete_source(cache, source=None, user=None, path=None):
 
     options = []
     for s in cache["sources"]:
-        if source and not source["name"] == s:
+        if source and not source.SOURCE_NAME == s:
             continue
 
         for t in cache["sources"][s]:
@@ -248,7 +228,7 @@ def main():
         delete_source(cache, args.source, args.user, args.path)
 
     for source in cache["sources"]:
-        api = SOURCES[source]["api"]
+        api = get_source(source)
         for target in cache["sources"][source]:
             path = target["dir"]
             user = target["user"]
