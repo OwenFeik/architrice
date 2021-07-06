@@ -1,3 +1,4 @@
+import datetime
 import re
 
 import bs4
@@ -50,8 +51,11 @@ def get_user_id(username):
         URL_BASE + f"members/search/?search_name={username}"
     ).content.decode()
     soup = bs4.BeautifulSoup(html, "html.parser")
-    href = soup.select_one("a.member_name").get("href")
-    return re.sub(r"^https://deckstats\.net/decks/(\d+).*$", r"\1", href)
+    try:
+        href = soup.select_one("a.member_name").get("href")
+        return re.sub(r"^https://deckstats\.net/decks/(\d+).*$", r"\1", href)
+    except AttributeError:
+        return None
 
 
 def get_deck_list(username):
@@ -75,7 +79,9 @@ def get_deck_list(username):
                 decks.append(
                     {
                         "id": str(deck["saved_id"]) + f"&owner_id={user_id}",
-                        "updated": deck["updated"] or deck["added"],
+                        "updated": datetime.datetime.utcfromtimestamp(
+                            deck["updated"]
+                        ).timestamp(),
                     }
                 )
 
@@ -88,3 +94,7 @@ def get_deck_list(username):
                 return decks
         else:
             return []
+
+
+def verify_user(username):
+    return bool(get_user_id(username))

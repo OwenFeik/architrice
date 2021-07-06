@@ -136,7 +136,9 @@ def delete_source(cache, source=None, user=None, path=None):
     else:
         target = cli.get_choice(options, "Delete which target?")
 
-    m = re.match(r"^(?P<source>\w+): (?P<user>\w+) \((?P<path>.+)\)$", target)
+    m = re.match(
+        r"^(?P<source>[\w ]+): (?P<user>\w+) \((?P<path>.+)\)$", target
+    )
     source = m.group("source")
     user = m.group("user")
     path = m.group("path")

@@ -87,12 +87,10 @@ def age_string_to_timestamp(string):
     now = datetime.datetime.utcnow().timestamp()
     if string == "Updated a few seconds ago.":
         return now
-    elif (
-        m := re.match(
-            r"Updated (?P<n>\d+) (?P<unit>minute|hour|day|month|year)s? ago\.",
-            string,
-        )
-    ) :
+    elif m := re.match(
+        r"Updated (?P<n>\d+) (?P<unit>minute|hour|day|month|year)s? ago\.",
+        string,
+    ):
         n = int(m.group("n"))
         unit = {
             "minute": 60,

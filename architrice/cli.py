@@ -44,7 +44,7 @@ def get_decision(prompt, default=True):
 def get_string(prompt):
     while not (string := input(f"{prompt} {PROMPT}")):
         pass
-    return string
+    return string.strip()
 
 
 def get_path(prompt):

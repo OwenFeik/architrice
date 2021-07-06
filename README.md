@@ -8,6 +8,7 @@ of your choosing.
 Architrice currently supports the following deckbuilding websites
 
 * Archidekt
+* Deckstats
 * Moxfield
 * Tapped Out
 
