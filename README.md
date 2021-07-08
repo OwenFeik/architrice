@@ -20,10 +20,11 @@ or better.
 To get started run `python -m architrice` for a simple wizard, or use the `-s`,
 `-u` and `-p` command line options to configure as in
 ```
-python -m architrice -s website_name -u website_username -p /path/to/deck/directory
+python -m architrice -s website_name -u website_username -p \
+    /path/to/deck/directory
 ```
-To remove a configured target use `python -m architrice -d` for a wizard, or
-specify source user and path as above. To add another target use `-n` . For
+To remove a configured profile use `python -m architrice -d` for a wizard, or
+specify source, user and path as above. To add another profile use `-n` . For
 detailed help, use `python -m architrice -h` .
 
-Only your public decks on Archidekt can be seen and downloaded by Architrice.
+Only your public decks can be seen and downloaded by Architrice.
