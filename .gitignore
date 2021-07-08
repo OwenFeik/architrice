@@ -3,4 +3,4 @@
 *.json
 __pycache*
 *.egg-info
-log
+*.log
