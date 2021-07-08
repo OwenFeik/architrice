@@ -6,7 +6,7 @@ import os
 import re
 import sys
 
-DEBUG = False
+DEBUG = True
 
 
 def get_data_dir():
@@ -31,7 +31,7 @@ DATA_DIR = get_data_dir()
 CACHE_FILE = os.path.join(DATA_DIR, "cache.json")
 LOG_FILE = os.path.join(DATA_DIR, "architrice.log")
 
-DEFAULT_CACHE = {"sources": {}, "dirs": {}}
+DEFAULT_CACHE = {"profiles": {}, "dirs": {}}
 
 
 def ensure_data_dir():

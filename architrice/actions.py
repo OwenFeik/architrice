@@ -7,34 +7,10 @@ import os
 from . import cockatrice
 from . import utils
 
-# To facilitate this, generic intermediate formats for decks and lists
-# thereof are defined as follows.
-#
-# Generic deck format:
-#   {
-#       "name": "Deck Title",
-#       "file_name": "deck_title.file",
-#       "description": "Description of deck",
-#       "main": [
-#           (quantity, card_name, is_dfc) ... for card in main deck
-#       ],
-#       "side": [
-#           (quantity, card_name, is_dfc) ... for card in sideboard
-#       ]
-#   }
-#
-# Generic list of decks format:
-#   [
-#       {
-#           "id": "ARCHIDEKT_DECK_ID",
-#           "updated": UTC_TIMESTAMP
-#       } ... for each deck
-#   ]
-
 THREAD_POOL_MAX_WORKERS = 12
 
 
-def download_deck(api, target, deck_id, path, dir_cache):
+def download_deck(source, target, deck_id, path, dir_cache):
     if deck_id in dir_cache:
         logging.debug(f"Updating existing deck {deck_id}.")
         deck_cache = dir_cache[deck_id]
@@ -42,76 +18,83 @@ def download_deck(api, target, deck_id, path, dir_cache):
         logging.debug(f"Downloading new deck {deck_id}.")
         dir_cache[deck_id] = deck_cache = {"name": None, "updated": 0}
 
-    deck = api.get_deck(deck_id)
+    deck = source.get_deck(deck_id)
 
     if deck_cache["name"]:
-        deck["file_name"] = deck_cache["name"]
+        file_name = deck_cache["name"]
     else:
-        deck_cache["name"] = deck["file_name"] = target.create_file_name(
-            deck["name"]
-        )
+        file_name = deck_cache["name"] = target.create_file_name(deck.name)
 
-    target.save_deck(deck, os.path.join(path, deck["file_name"]))
+    target.save_deck(deck, os.path.join(path, file_name))
     deck_cache["updated"] = datetime.datetime.utcnow().timestamp()
-    logging.info(f"Successfully downloaded {deck['name']} ({deck_id}).")
 
 
-def decks_to_update(api, username, dir_cache):
-    decks = api.get_deck_list(username)
-    logging.info(f"Total decks: {len(decks)}.")
+def needs_update(dir_cache, deck):
+    return (
+        deck
+        and deck.deck_id not in dir_cache
+        or deck.updated > dir_cache[deck.deck_id]["updated"]
+    )
+
+
+def decks_to_update(source, username, dir_cache):
+    decks = source.get_deck_list(username)
 
     to_download = []
     for deck in decks:
-        if (
-            deck["id"] not in dir_cache
-            or deck["updated"] > dir_cache[deck["id"]]["updated"]
-        ):
-            to_download.append(deck["id"])
+        if needs_update(dir_cache, deck):
+            to_download.append(deck.deck_id)
 
     logging.info(f"To update: {len(to_download)}.")
 
     return to_download
 
 
-def download_latest(api, target, username, path, dir_cache):
-    to_download = decks_to_update(api, username, dir_cache)
-    if len(to_download) == 0:
-        logging.info("All decks up to date.")
-    else:
+def download_latest(source, target, username, path, dir_cache):
+    latest = source.get_latest_deck(username)
+    if needs_update(dir_cache, latest):
         download_deck(
-            api,
+            source,
             target,
-            max(to_download, key=lambda d: d["updated"])["id"],
+            latest.deck_id,
             path,
             dir_cache,
         )
+    else:
+        logging.info("Latest deck is up to date.")
 
 
 # This is asynchronous so that it can use a ThreadPoolExecutor to speed up
 # perfoming many deck requests.
-async def download_decks_pool(api, target, loop, decks, path, dir_cache):
+async def download_decks_pool(source, target, loop, decks, path, dir_cache):
     with concurrent.futures.ThreadPoolExecutor(
         max_workers=THREAD_POOL_MAX_WORKERS
     ) as executor:
         futures = [
             loop.run_in_executor(
-                executor, download_deck, api, target, deck_id, path, dir_cache
+                executor,
+                download_deck,
+                source,
+                target,
+                deck_id,
+                path,
+                dir_cache,
             )
             for deck_id in decks
         ]
         return await asyncio.gather(*futures)
 
 
-def download_all(api, target, username, path, dir_cache):
-    logging.info(f"Updating all decks for {username} on {api.SOURCE_NAME}.")
+def download_all(source, target, username, path, dir_cache):
+    logging.info(f"Updating all decks for {username} on {source.name}.")
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(
         download_decks_pool(
-            api,
+            source,
             target,
             loop,
-            decks_to_update(api, username, dir_cache),
+            decks_to_update(source, username, dir_cache),
             path,
             dir_cache,
         )

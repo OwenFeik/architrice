@@ -2,81 +2,79 @@ import requests
 
 from .. import utils
 
-SOURCE_NAME = "Moxfield"
-SOURCE_SHORT = "M"
-
-URL_BASE = "https://api.moxfield.com/"
-DECK_LIST_PAGE_SIZE = 100
-SIDEBOARD_CATEGORIES = ["sideboard", "maybeboard", "commanders"]
-REQUEST_OK = 200
+from . import source
 
 
-def is_dfc(layout):
-    return layout in ["transform", "modal_dfc"]
+class Moxfield(source.Source):
+    NAME = "Moxfield"
+    SHORT = NAME[0]
+    URL_BASE = "https://api.moxfield.com/"
+    DECK_LIST_PAGE_SIZE = 100
+    REQUEST_OK = 200
 
+    def __init__(self):
+        super().__init__(Moxfield.NAME, Moxfield.SHORT)
 
-def parse_to_tuples(board):
-    card_tuples = []
-    for k in board:
-        card_tuples.append(
-            (board[k]["quantity"], k, is_dfc(board[k]["card"]["layout"]))
+    def is_dfc(self, layout):
+        return layout in ["transform", "modal_dfc"]
+
+    def parse_to_cards(self, board):
+        cards = []
+        for k in board:
+            cards.append(
+                source.Card(
+                    board[k]["quantity"],
+                    k,
+                    self.is_dfc(board[k]["card"]["layout"]),
+                )
+            )
+
+        return cards
+
+    def deck_to_generic_format(self, deck):
+        d = source.Deck(deck["name"], deck["description"])
+
+        for board in ["mainboard", "sideboard", "maybeboard", "commanders"]:
+            d.add_cards(self.parse_to_cards(deck.get(board, {})), board)
+
+        return d
+
+    def _get_deck(self, deck_id):
+        return self.deck_to_generic_format(
+            requests.get(f"{Moxfield.URL_BASE}v2/decks/all/{deck_id}").json()
         )
 
-    return card_tuples
+    def deck_list_to_generic_format(self, decks):
+        ret = []
+        for deck in decks:
+            ret.append(
+                source.DeckUpdate(
+                    self.format_deck_id(deck["publicId"]),
+                    utils.parse_iso_8601(deck["lastUpdatedAtUtc"]),
+                )
+            )
+        return ret
 
+    def _get_deck_list(self, username, allpages=True):
+        decks = []
+        i = 1
+        while True:
+            j = requests.get(
+                f"{Moxfield.URL_BASE}v2/users/{username}/decks",
+                params={
+                    "pageSize": Moxfield.DECK_LIST_PAGE_SIZE,
+                    "pageNumber": i,
+                },
+            ).json()
+            decks.extend(j["data"])
+            i += 1
+            if i > j["totalPages"] or not allpages:
+                break
 
-def deck_to_generic_format(deck):
-    main = parse_to_tuples(deck["mainboard"])
-    side = []
-    for c in SIDEBOARD_CATEGORIES:
-        if deck.get(c):
-            side.extend(parse_to_tuples(deck[c]))
+        return self.deck_list_to_generic_format(decks)
 
-    return {
-        "name": deck["name"],
-        "description": deck["description"],
-        "main": main,
-        "side": side,
-    }
-
-
-def get_deck(deck_id):
-    return deck_to_generic_format(
-        requests.get(URL_BASE + f"v2/decks/all/{deck_id}").json()
-    )
-
-
-def deck_list_to_generic_format(decks):
-    ret = []
-    for deck in decks:
-        ret.append(
-            {
-                "id": deck["publicId"],
-                "updated": utils.parse_iso_8601(deck["lastUpdatedAtUtc"]),
-            }
+    def _verify_user(self, username):
+        return (
+            requests.get(f"{Moxfield.URL_BASE}v1/users/{username}").status_code
+            == Moxfield.REQUEST_OK
         )
-    return ret
-
-
-def get_deck_list(username, allpages=True):
-    decks = []
-    i = 1
-    while True:
-        j = requests.get(
-            URL_BASE
-            + f"v2/users/{username}/decks"
-            + f"?pageSize={DECK_LIST_PAGE_SIZE}&pageNumber={i}"
-        ).json()
-        decks.extend(j["data"])
-        i += 1
-        if i > j["totalPages"] or not allpages:
-            break
-
-    return deck_list_to_generic_format(decks)
-
-
-def verify_user(username):
-    return (
-        requests.get(URL_BASE + f"v1/users/{username}").status_code
-        == REQUEST_OK
-    )
