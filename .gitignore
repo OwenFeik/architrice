@@ -4,3 +4,4 @@
 __pycache*
 *.egg-info
 *.log
+*/data/*
