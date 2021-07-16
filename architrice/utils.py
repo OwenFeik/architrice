@@ -1,6 +1,5 @@
 import datetime
 import itertools
-import json
 import logging
 import os
 import re
@@ -28,10 +27,7 @@ def get_data_dir():
 
 
 DATA_DIR = get_data_dir()
-CACHE_FILE = os.path.join(DATA_DIR, "cache.json")
 LOG_FILE = os.path.join(DATA_DIR, "architrice.log")
-
-DEFAULT_CACHE = {"profiles": {}, "dirs": {}}
 
 
 def ensure_data_dir():
@@ -54,48 +50,6 @@ def set_up_logger(verbosity=1):
         handlers.append(stdout_handler)
 
     logging.basicConfig(level=logging.DEBUG, handlers=handlers)
-
-
-# Cache format:
-#   {
-#       "sources": [
-#           "SOURCE_NAME": [
-#               {
-#                   "user": "USER_NAME",
-#                   "dir": "PATH_TO_DIR"
-#               } ... for each user
-#           ] ... for each source
-#       ],
-#       "dirs": {
-#           "PATH_TO_DIR": {
-#               "DECK_ID": {
-#                   "updated": timestamp
-#                   "name": "file name"
-#               } ... for each deck downloaded
-#           } ... for each deck directory
-#       }
-#   }
-def load_cache():
-    if os.path.isfile(CACHE_FILE):
-        with open(CACHE_FILE, "r") as f:
-            return json.load(f)
-    return DEFAULT_CACHE
-
-
-def get_dir_cache(cache, path):
-    if path not in cache["dirs"]:
-        cache["dirs"][path] = {}
-    return cache["dirs"][path]
-
-
-def save_cache(cache):
-    ensure_data_dir()
-    with open(CACHE_FILE, "w") as f:
-        json.dump(cache, f, indent=4)
-
-
-def cache_exists():
-    return os.path.isfile(CACHE_FILE)
 
 
 def create_file_name(deck_name):

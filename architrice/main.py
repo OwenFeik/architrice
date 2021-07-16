@@ -4,9 +4,10 @@ import argparse
 import logging
 import os
 import re
+import subprocess
 import sys
 
-from . import actions
+from . import caching
 from . import cli
 from . import utils
 
@@ -15,6 +16,8 @@ from . import sources
 
 # Targets
 from . import cockatrice
+
+target = cockatrice
 
 APP_NAME = "architrice"
 
@@ -38,15 +41,20 @@ non-interactivity with the -i or --non-interactive flag and use the flags for
 source, user and path as in 
 {APP_NAME} -i -s SOURCE -u USER -p PATH -n
 Replace -n with -d to delete instead of creating. 
+
+To skip updating decklists while using other functionality, include the -k flag.
+
+To add shortcuts to launch {APP_NAME} alongside Cockatrice, run {APP_NAME} -r.
 """
 
 
 def get_source(name, picker=False):
-    if name:
-        name = name.lower()
-        for s in sources.sourcelist:
-            if s.NAME.lower() == name or s.SHORT.lower() == name:
-                return s()
+    if name is not None:
+        try:
+            if (source := sources.get_source(name)) :
+                return source
+        except ValueError:
+            logging.error(f"Invalid source name: {name}.")
     if picker:
         return source_picker()
     return None
@@ -76,15 +84,7 @@ def get_verified_user(source, user, interactive=False):
     return user
 
 
-def check_for_redundant_profile(cache, source, user, path):
-    for profile in cache["profiles"].get(source.name, []):
-        if profile["user"] == user and os.path.samefile(profile["dir"], path):
-            return True
-    return False
-
-
 def add_profile(cache, interactive, source=None, user=None, path=None):
-    target = cockatrice
     if not (source := get_source(source, interactive)):
         logging.error("No source specified. Unable to add profile.")
         return
@@ -103,15 +103,17 @@ def add_profile(cache, interactive, source=None, user=None, path=None):
         path = None
 
     if not path:
-        if cache["dirs"] and cli.get_decision("Use existing output directory?"):
-            if len(cache["dirs"]) == 1:
-                path = list(cache["dirs"].keys())[0]
+        if cache.dir_caches and cli.get_decision(
+            "Use existing output directory?"
+        ):
+            if len(cache.dir_caches) == 1:
+                path = cache.dir_caches[0].path
                 logging.info(
                     f"Only one existing directory, defaulting to {path}."
                 )
             else:
                 path = cli.get_choice(
-                    list(cache["dirs"].keys()),
+                    [d.path for d in cache.dir_caches],
                     "Which existing directory should be used for these decks?",
                 )
         else:
@@ -125,38 +127,13 @@ def add_profile(cache, interactive, source=None, user=None, path=None):
             ):
                 path = cli.get_path("Output directory")
 
-    if cache["profiles"].get(source.name) is None:
-        cache["profiles"][source.name] = []
-
-    if check_for_redundant_profile(cache, source, user, path):
-        logging.info(
-            f"A profile with identical details already exists, "
-            "skipping creation."
-        )
-    else:
-        cache["profiles"][source.name].append({"user": user, "dir": path})
-        logging.info(
-            f"Added new profile: {user} on {source.name} outputting to {path}"
-        )
+    cache.build_profile(source, user, path)
 
 
 def delete_profile(cache, interactive, source=None, user=None, path=None):
     source = get_source(source)
 
-    options = []
-    for s in cache["profiles"]:
-        if source and not source.name == s:
-            continue
-
-        for profile in cache["profile"][s]:
-            p_user = profile["user"]
-            p_path = profile["dir"]
-
-            if user and p_user != user:
-                continue
-            if path and not os.path.samefile(p_path, path):
-                continue
-            options.append(f"{s}: {p_user} ({p_path})")
+    options = cache.filter_profiles(source, user, path)
 
     if not options:
         logging.info("No matching profiles exist, ignoring delete option.")
@@ -165,52 +142,49 @@ def delete_profile(cache, interactive, source=None, user=None, path=None):
         logging.info("One profile matches criteria, deleting this.")
         profile = options[0]
     elif interactive:
-        profile = cli.get_choice(options, "Delete which profile?")
+        profile = cli.get_choice(
+            [str(p) for p in options], "Delete which profile?", options
+        )
     else:
         logging.error("Multiple profiles match criteria. Skipping delete.")
         return
 
-    # Parse option string back to source, user, path
-    m = re.match(
-        r"^(?P<source>[\w ]+): (?P<user>\w+) \((?P<path>.+)\)$", profile
-    )
-    source = m.group("source")
-    user = m.group("user")
-    path = m.group("path")
-    for profile in cache["profiles"][source]:
-        if profile["user"] == user and profile["dir"] == path:
-            cache["profiles"][source].remove(profile)
-            break
-
-    if not cache["profiles"][source]:
-        del cache["profiles"][source]
-
-    logging.info(f"Deleted profile {user} on {source} outputting to {path}")
+    cache.remove_profile(profile)
 
 
-def update_decks(cache, latest=False):
-    target = cockatrice
+def update_decks(cache, latest=False, source=None, user=None, path=None):
+    for profile in cache.filter_profiles(source, user, path):
+        if not utils.check_dir(profile.path):
+            logging.error(
+                f"Output directory {profile.path} already exists and is a file."
+                f"Skipping {profile.user_string} download."
+            )
+            continue
 
-    for source_name in cache["profiles"]:
-        source = get_source(source_name)
-        for profile in cache["profiles"][source_name]:
-            path = profile["dir"]
-            user = profile["user"]
+        profile.update(latest)
 
-            if not utils.check_dir(path):
-                logging.error(
-                    f"Output directory {path} already exists and is a file."
-                    f"Skipping {source_name} user {user} download."
-                )
-                continue
 
-            action = actions.download_latest if latest else actions.download_all
-            action(
-                source,
-                target,
-                user,
-                path,
-                utils.get_dir_cache(cache, path),
+def set_up_shortcuts():
+    if os.name == "nt":
+        from . import relnk
+
+        relnk.relink_shortcuts(
+            "Cockatrice.lnk",
+            cli.get_decision("Automatically update all shortcuts?"),
+        )
+    elif os.name == "posix":
+        ARCHITRICE_PATH = f"/usr/bin/{APP_NAME}"
+        if cli.get_decision(
+            "Add script to run Cockatrice and Architrice to path?"
+        ):
+            script_path = os.path.join(utils.DATA_DIR, APP_NAME)
+            with open(script_path, "w") as f:
+                f.write(f"cockatrice &\n{sys.executable} -m {APP_NAME} -q")
+            os.chmod(script_path, 0o755)
+            subprocess.call(["sudo", "mv", script_path, ARCHITRICE_PATH])
+            logging.info(
+                f'Running "{APP_NAME}" will now launch '
+                f"Cockatrice and run {APP_NAME}."
             )
 
 
@@ -277,26 +251,42 @@ def parse_args():
         action="store_true",
         help="skip updating decks",
     )
+    parser.add_argument(
+        "-r",
+        "--relink",
+        dest="relink",
+        action="store_true",
+        help="create shortcuts for architrice",
+    )
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
+    path = utils.expand_path(args.path) if args.path else None
 
     utils.set_up_logger(
         0 if args.quiet else args.verbosity + 1 if args.verbosity else 1
     )
 
-    cache = utils.load_cache()
-    if len(sys.argv) == 1 and not cache["profiles"]:
+    cache = caching.Cache.load()
+
+    if args.relink:
+        set_up_shortcuts()
+
+    if len(sys.argv) == 1 and not cache.profiles:
         add_profile(cache, args.interactive)
+        if cli.get_decision(
+            "Set up shortcuts to run Architrice when launching Cockatrice?"
+        ):
+            set_up_shortcuts()
     elif args.new:
         add_profile(
             cache,
             args.interactive,
             args.source,
             args.user,
-            utils.expand_path(args.path),
+            path,
         )
 
     if args.delete:
@@ -305,13 +295,13 @@ def main():
             args.interactive,
             args.source,
             args.user,
-            utils.expand_path(args.path),
+            path,
         )
 
     if not args.skip_update:
-        update_decks(cache, args.latest)
+        update_decks(cache, args.latest, args.source, args.user, path)
 
-    utils.save_cache(cache)
+    cache.save()
 
 
 if __name__ == "__main__":
