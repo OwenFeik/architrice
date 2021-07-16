@@ -153,7 +153,10 @@ def delete_profile(cache, interactive, source=None, user=None, path=None):
 
 
 def update_decks(cache, latest=False, source=None, user=None, path=None):
-    for profile in cache.filter_profiles(source, user, path):
+    profiles = cache.filter_profiles(source, user, path)
+    if not profiles:
+        logging.info("No profiles match filters, nothing to do.")
+    for profile in profiles:
         if not utils.check_dir(profile.path):
             logging.error(
                 f"Output directory {profile.path} already exists and is a file."
