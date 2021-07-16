@@ -51,7 +51,7 @@ To add shortcuts to launch {APP_NAME} alongside Cockatrice, run {APP_NAME} -r.
 def get_source(name, picker=False):
     if name is not None:
         try:
-            if (source := sources.get_source(name)) :
+            if source := sources.get_source(name):
                 return source
         except ValueError:
             logging.error(f"Invalid source name: {name}.")
@@ -173,7 +173,7 @@ def set_up_shortcuts():
 
         relnk.relink_shortcuts(
             "Cockatrice.lnk",
-            cli.get_decision("Automatically update all shortcuts?"),
+            not cli.get_decision("Automatically update all shortcuts?"),
         )
     elif os.name == "posix":
         ARCHITRICE_PATH = f"/usr/bin/{APP_NAME}"
@@ -189,6 +189,8 @@ def set_up_shortcuts():
                 f'Running "{APP_NAME}" will now launch '
                 f"Cockatrice and run {APP_NAME}."
             )
+    else:
+        logging.error("Unsupported operating system.")
 
 
 def parse_args():

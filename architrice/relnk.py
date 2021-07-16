@@ -32,6 +32,16 @@ SHORTCUT_PATHS = [
 PS_SHORTCUT_SNIPPET = (
     "(New-Object -ComObject WScript.Shell).CreateShortcut('{}')"
 )
+PS_RELINK_SNIPPET = (
+    f"$shortcut = {PS_SHORTCUT_SNIPPET};"
+    "$target_path = $shortcut.TargetPath;"
+    "$shortcut.TargetPath = '{}';"
+    "$shortcut.IconLocation = -join($target_path,',0');"
+    "$shortcut.Save();"
+)
+# Any single quotes in the command must be appropriately escaped,
+# use root_format_command instead of directly calling .format
+PS_ROOT_SNIPPET = "Start-Process powershell -Verb RunAs -Args '-Command {}'"
 PS_COMMAND_SNIPPET = 'powershell -command "{}"'
 
 # Name of the .bat file created to run both apps
@@ -62,18 +72,25 @@ def get_shortcut_target(shortcut_path):
     )
 
 
-def relink_shortcut(shortcut_path, new_target):
+def root_format_command(command):
+    return PS_ROOT_SNIPPET.format(command.replace("'", "''"))
+
+
+def relink_shortcut(shortcut_path, new_target, as_admin=False):
+    command = PS_RELINK_SNIPPET.format(shortcut_path, new_target)
     try:
         subprocess.check_call(
             PS_COMMAND_SNIPPET.format(
-                f"$shortcut = {PS_SHORTCUT_SNIPPET.format(shortcut_path)};"
-                f"$shortcut.TargetPath = '{new_target}'; $shortcut.Save()"
+                root_format_command(command) if as_admin else command
             ),
             stderr=subprocess.DEVNULL,
         )
     except subprocess.CalledProcessError:
         logging.error(f"Failed to relink shortcut at {shortcut_path}.")
-        logging.info("Run `python -m architrice -r` as admin to retry.")
+        if not as_admin:
+            logging.info("Retrying as admin.")
+            relink_shortcut(shortcut_path, new_target, True)
+        return
     logging.info(f"Relinked {shortcut_path} to {new_target}.")
 
 
@@ -94,6 +111,7 @@ def relink_shortcuts(shortcut_name, confirm=False):
                 + ". Would you like to update it to run Architrice at launch?"
             ):
                 shortcut_path = os.path.join(path, shortcut_name)
-                if (cockatrice_path := get_shortcut_target(shortcut_path)) :
-                    script_path = create_batch_file(cockatrice_path)
+                shortcut_target = get_shortcut_target(shortcut_path)
+                if shortcut_target and not BATCH_FILE_NAME in shortcut_target:
+                    script_path = create_batch_file(shortcut_target)
                     relink_shortcut(shortcut_path, script_path)
