@@ -48,12 +48,12 @@ PS_COMMAND_SNIPPET = 'powershell -command "{}"'
 BATCH_FILE_NAME = "run_archi_cocka_trice.bat"
 
 
-def create_batch_file(cockatrice_path):
+def create_batch_file(client_path):
     batch_file_path = os.path.join(utils.DATA_DIR, BATCH_FILE_NAME)
     if not os.path.exists(batch_file_path):
         with open(batch_file_path, "w") as f:
             f.write(
-                PS_COMMAND_SNIPPET.format(f"Start-Process '{cockatrice_path}'")
+                PS_COMMAND_SNIPPET.format(f"Start-Process '{client_path}'")
                 + f"\n{sys.executable} -m architrice -q"
             )
 

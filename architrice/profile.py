@@ -5,7 +5,7 @@ import logging
 import os
 
 from . import sources
-from . import cockatrice  # currently the sole target
+from . import targets
 
 THREAD_POOL_MAX_WORKERS = 12
 
@@ -20,12 +20,12 @@ class Profile:
 
     def __repr__(self):
         return (
-            f"<Profile source={self.source.name} user={self.user}"
-            f" path={self.path}>"
+            f"<Profile source={self.source.name} target={self.target.name}"
+            f" user={self.user} path={self.path}>"
         )
 
     def __str__(self):
-        return f"{self.user_string} ({self.path})"
+        return f"{self.user_string} for {self.target.name} ({self.path})"
 
     @property
     def user_string(self):
@@ -99,13 +99,13 @@ class Profile:
             self.download_all()
 
     def to_json(self):
-        return {"source": self.source.name, "user": self.user, "dir": self.path}
+        return {"source": self.source.name, "target": self.target.name, "user": self.user, "dir": self.path}
 
-    @staticmethod
+    @staticmethod 
     def from_json(data, cache):
         return Profile(
             sources.get_source(data["source"]),
-            cockatrice,
+            targets.get_target(data["target"]),
             data["user"],
             data["dir"],
             cache.get_dir_cache(data["dir"]),

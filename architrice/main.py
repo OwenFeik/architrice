@@ -9,15 +9,9 @@ import sys
 
 from . import caching
 from . import cli
-from . import utils
-
-# Sources
 from . import sources
-
-# Targets
-from . import cockatrice
-
-target = cockatrice
+from . import targets
+from . import utils
 
 APP_NAME = "architrice"
 
@@ -67,6 +61,23 @@ def source_picker():
         sources.sourcelist,
     )()
 
+def get_target(name, picker=False):
+    if name is not None:
+        try:
+            if target := targets.get_target(name):
+                return target
+        except ValueError:
+            logging.error(f"Invalid target name: {name}.")
+    if picker:
+        return target_picker()
+    return None
+
+def target_picker():
+    return cli.get_choice(
+        [t.NAME for t in targets.targetlist],
+        "Output in which supported decklist format?",
+        targets.targetlist
+    )()
 
 def get_verified_user(source, user, interactive=False):
     if not user:
@@ -84,9 +95,13 @@ def get_verified_user(source, user, interactive=False):
     return user
 
 
-def add_profile(cache, interactive, source=None, user=None, path=None):
+def add_profile(cache, interactive, source=None, target=None, user=None, path=None):
     if not (source := get_source(source, interactive)):
         logging.error("No source specified. Unable to add profile.")
+        return
+
+    if not (target := get_target(target, interactive)):
+        logging.error("No target specified. Unable to add profile.")
         return
 
     if not (user := get_verified_user(source, user, interactive)):
@@ -121,19 +136,20 @@ def add_profile(cache, interactive, source=None, user=None, path=None):
             if not (
                 (os.path.isdir(path))
                 and cli.get_decision(
-                    f"Found Cockatrice deck directory at {path}."
+                    f"Found {target.name} deck directory at {path}."
                     " Output decklists here?"
                 )
             ):
                 path = cli.get_path("Output directory")
 
-    cache.build_profile(source, user, path)
+    cache.build_profile(source, target, user, path)
 
 
-def delete_profile(cache, interactive, source=None, user=None, path=None):
+def delete_profile(cache, interactive, source=None, target=None, user=None, path=None):
     source = get_source(source)
+    target = get_target(target)
 
-    options = cache.filter_profiles(source, user, path)
+    options = cache.filter_profiles(source, target, user, path)
 
     if not options:
         logging.info("No matching profiles exist, ignoring delete option.")
@@ -152,8 +168,8 @@ def delete_profile(cache, interactive, source=None, user=None, path=None):
     cache.remove_profile(profile)
 
 
-def update_decks(cache, latest=False, source=None, user=None, path=None):
-    profiles = cache.filter_profiles(source, user, path)
+def update_decks(cache, latest=False, source=None, target=None, user=None, path=None):
+    profiles = cache.filter_profiles(source, target, user, path)
     if not profiles:
         logging.info("No profiles match filters, nothing to do.")
     for profile in profiles:
@@ -166,7 +182,7 @@ def update_decks(cache, latest=False, source=None, user=None, path=None):
 
         profile.update(latest)
 
-
+# TODO: mtgo shortcuts
 def set_up_shortcuts():
     if os.name == "nt":
         from . import relnk
@@ -203,6 +219,9 @@ def parse_args():
     )
     parser.add_argument(
         "-s", "--source", dest="source", help="set source website"
+    )
+    parser.add_argument(
+        "-t", "--target", dest="target", help="set target program"
     )
     parser.add_argument(
         "-p", "--path", dest="path", help="set deck file output directory"
@@ -290,6 +309,7 @@ def main():
             cache,
             args.interactive,
             args.source,
+            args.target,
             args.user,
             path,
         )
@@ -299,12 +319,13 @@ def main():
             cache,
             args.interactive,
             args.source,
+            args.target,
             args.user,
             path,
         )
 
     if not args.skip_update:
-        update_decks(cache, args.latest, args.source, args.user, path)
+        update_decks(cache, args.latest, args.source, args.target, args.user, path)
 
     cache.save()
 

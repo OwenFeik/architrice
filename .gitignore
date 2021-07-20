@@ -1,4 +1,5 @@
 *.cod
+*.dek
 *.xml
 *.json
 __pycache*

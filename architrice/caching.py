@@ -4,7 +4,6 @@ import json
 import logging
 import os
 
-from . import cockatrice
 from . import profile
 from . import utils
 
@@ -104,24 +103,27 @@ class Cache:
         if new:
             logging.info(
                 f"Added new profile: {profile.user} on "
-                f"{profile.source.name} outputting to {profile.path}"
+                f"{profile.source.name} outputting in {profile.target.name} "
+                f"format to {profile.path}"
             )
 
     def remove_profile(self, profile):
         self.profiles.remove(profile)
         logging.info(f"Deleted profile for {str(profile)}.")
 
-    def build_profile(self, source, user, path):
+    def build_profile(self, source, target, user, path):
         self.add_profile(
             profile.Profile(
-                source, cockatrice, user, path, self.get_dir_cache(path)
+                source, target, user, path, self.get_dir_cache(path)
             )
         )
 
-    def filter_profiles(self, source, user, path):
+    def filter_profiles(self, source, target, user, path):
         ret = []
         for p in self.profiles:
             if source and p.source is not source:
+                continue
+            if target and p.target is not target:
                 continue
             if user and p.user != user:
                 continue

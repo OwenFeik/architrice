@@ -1,8 +1,8 @@
 # Architrice
 
 Architrice is a tool to synchronise your online deck collection
-to your local machine to be used with Cockatrice. It downloads decks by user, 
-converts them to Cockatrice deck format and saves them in a location
+to your local machine to be used with MtG clients. It downloads decks by user, 
+converts them to the right deck format and saves them in a location
 of your choosing.
 
 Architrice currently supports the following deckbuilding websites
@@ -11,6 +11,11 @@ Architrice currently supports the following deckbuilding websites
 * Deckstats
 * Moxfield
 * Tapped Out
+
+and the following MtG clients
+
+* Cockatrice
+* MTGO
 
 ## Installation
 Architrice is available on PyPi so you can install it with
