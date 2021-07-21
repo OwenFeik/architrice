@@ -10,22 +10,26 @@ from . import targets
 THREAD_POOL_MAX_WORKERS = 12
 
 
-class Profile:
-    def __init__(self, source, target, user, path, dir_cache):
-        self.source = source
+class ProfileDir:
+    def __init__(self, target, dir_cache, db_id=None):
         self.target = target
+        self.dir = dir_cache
+        self.id = db_id
+
+
+class Profile:
+    def __init__(self, source, user, profile_dirs, name=None, db_id=True):
+        self.source = source
         self.user = user
-        self.path = path
-        self.dir_cache = dir_cache
+        self.dirs = profile_dirs
+        self.name = name
+        self.id = db_id
 
     def __repr__(self):
-        return (
-            f"<Profile source={self.source.name} target={self.target.name}"
-            f" user={self.user} path={self.path}>"
-        )
+        return f"<Profile source={self.source.name} user={self.user}>"
 
     def __str__(self):
-        return f"{self.user_string} for {self.target.name} ({self.path})"
+        return self.user_string
 
     @property
     def user_string(self):
@@ -99,9 +103,14 @@ class Profile:
             self.download_all()
 
     def to_json(self):
-        return {"source": self.source.name, "target": self.target.name, "user": self.user, "dir": self.path}
+        return {
+            "source": self.source.name,
+            "target": self.target.name,
+            "user": self.user,
+            "dir": self.path,
+        }
 
-    @staticmethod 
+    @staticmethod
     def from_json(data, cache):
         return Profile(
             sources.get_source(data["source"]),

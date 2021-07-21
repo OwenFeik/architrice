@@ -4,6 +4,7 @@ import json
 import logging
 import os
 
+from . import database
 from . import profile
 from . import utils
 
@@ -13,6 +14,7 @@ class DeckFile:
     deck_id: str
     file_name: str = None
     updated: float = 0
+    db_id = None
 
     def update(self):
         self.updated = datetime.datetime.utcnow().timestamp()
@@ -30,9 +32,10 @@ class DeckFile:
 
 
 class DirCache:
-    def __init__(self, path):
+    def __init__(self, path, db_id=None):
         self.path = path
         self.tracked = {}  # {deck_id: DeckFile} ... for each deck
+        self.id = db_id
 
     def add_deck_update(self, update):
         # Works with both source.DeckUpdate and DeckFile objects
@@ -152,6 +155,34 @@ class Cache:
         utils.ensure_data_dir()
         with open(Cache.CACHE_FILE, "w") as f:
             json.dump(self.to_json(), f, indent=4)
+
+    def save_to_db(self):
+        dir_caches = []
+        for profile in self.profiles:
+            if profile.id is None:
+                profile.id = database.insert(
+                    "profiles",
+                    source=profile.source.short,
+                    user=profile.user,
+                    name=profile.name,
+                )
+            for profile_dir in profile.dirs:
+                if profile_dir.id is None:
+                    if profile.dir_cache.id is None:
+                        profile.dir_cache.id = database.insert(
+                            "dirs", path=profile.dir_cache.path
+                        )
+                    profile_dir.id = database.insert(
+                        "profile_dirs",
+                        target=profile_dir.target.short,
+                        dir=profile_dir.dir_cache.id,
+                        profile=profile.id,
+                    )
+
+                if profile_dir.dir_cache not in dir_caches:
+                    dir_caches.append(profile_dir.dir_cache)
+
+        # TODO finish database saving
 
     @staticmethod
     def from_json(data):

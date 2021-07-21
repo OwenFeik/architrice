@@ -9,6 +9,7 @@ import sys
 
 from . import caching
 from . import cli
+from . import database
 from . import sources
 from . import targets
 from . import utils
@@ -61,6 +62,7 @@ def source_picker():
         sources.sourcelist,
     )()
 
+
 def get_target(name, picker=False):
     if name is not None:
         try:
@@ -72,12 +74,14 @@ def get_target(name, picker=False):
         return target_picker()
     return None
 
+
 def target_picker():
     return cli.get_choice(
         [t.NAME for t in targets.targetlist],
         "Output in which supported decklist format?",
-        targets.targetlist
+        targets.targetlist,
     )()
+
 
 def get_verified_user(source, user, interactive=False):
     if not user:
@@ -95,7 +99,9 @@ def get_verified_user(source, user, interactive=False):
     return user
 
 
-def add_profile(cache, interactive, source=None, target=None, user=None, path=None):
+def add_profile(
+    cache, interactive, source=None, target=None, user=None, path=None
+):
     if not (source := get_source(source, interactive)):
         logging.error("No source specified. Unable to add profile.")
         return
@@ -145,7 +151,9 @@ def add_profile(cache, interactive, source=None, target=None, user=None, path=No
     cache.build_profile(source, target, user, path)
 
 
-def delete_profile(cache, interactive, source=None, target=None, user=None, path=None):
+def delete_profile(
+    cache, interactive, source=None, target=None, user=None, path=None
+):
     source = get_source(source)
     target = get_target(target)
 
@@ -168,7 +176,9 @@ def delete_profile(cache, interactive, source=None, target=None, user=None, path
     cache.remove_profile(profile)
 
 
-def update_decks(cache, latest=False, source=None, target=None, user=None, path=None):
+def update_decks(
+    cache, latest=False, source=None, target=None, user=None, path=None
+):
     profiles = cache.filter_profiles(source, target, user, path)
     if not profiles:
         logging.info("No profiles match filters, nothing to do.")
@@ -181,6 +191,7 @@ def update_decks(cache, latest=False, source=None, target=None, user=None, path=
             continue
 
         profile.update(latest)
+
 
 # TODO: mtgo shortcuts
 def set_up_shortcuts():
@@ -293,6 +304,13 @@ def main():
         0 if args.quiet else args.verbosity + 1 if args.verbosity else 1
     )
 
+    database.init()
+    database.commit()
+
+    print(database.select("decks"))
+
+    exit()
+
     cache = caching.Cache.load()
 
     if args.relink:
@@ -325,7 +343,9 @@ def main():
         )
 
     if not args.skip_update:
-        update_decks(cache, args.latest, args.source, args.target, args.user, path)
+        update_decks(
+            cache, args.latest, args.source, args.target, args.user, path
+        )
 
     cache.save()
 
