@@ -1,7 +1,6 @@
 *.cod
 *.dek
 *.xml
-*.json
 __pycache*
 *.egg-info
 *.log

@@ -1,6 +1,8 @@
 import os
 import xml.etree.cElementTree as et
 
+from .. import utils
+
 from . import target
 
 
@@ -8,13 +10,13 @@ class Cockatrice(target.Target):
     NAME = "Cockatrice"
     SHORT = "C"
     DECK_DIRECTORY = (
-        os.path.abspath(
+        utils.expand_path(
             os.path.join(
                 os.getenv("LOCALAPPDATA"), "Cockatrice/Cockatrice/decks"
             )
         )
         if os.name == "nt"
-        else os.path.expanduser("~/.local/share/Cockatrice/Cockatrice/decks")
+        else utils.expand_path("~/.local/share/Cockatrice/Cockatrice/decks")
     )
     DECK_FILE_EXTENSION = ".cod"
 

@@ -17,26 +17,15 @@ class Source(abc.ABC):
         self.name = name
         self.short = short
 
-    def format_deck_id(self, deck_id):
-        """Return an id gauranteed to be unique across sources for this deck."""
-
-        # Because multiple sources use numeric ids, we might have collisions.
-        # By prepending the short form of the source name, collisions are
-        # prevented.
-        return f"{self.short}_{str(deck_id)}"
-
-    def unformat_deck_id(self, internal_deck_id):
-        """Convert a formatted deck id back to the source format."""
-
-        # Just need to slice off the source identifier character
-        return internal_deck_id[2:]
+    def create_deck(self, deck_id, name, description):
+        """Create a Deck with relevant information."""
+        return Deck(deck_id, self.short, name, description)
 
     def _get_deck(self, deck_id):
         pass
 
-    def get_deck(self, internal_deck_id):
+    def get_deck(self, deck_id):
         """Download as `Deck` the deck with id `deck_id` from this source."""
-        deck_id = self.unformat_deck_id(internal_deck_id)
         deck = self._get_deck(deck_id)
         logging.info(f"Downloaded {self.name} deck {deck.name} (id: {deck_id})")
         return deck
@@ -94,7 +83,9 @@ class Card:
 
 
 class Deck:
-    def __init__(self, name, description, **kwargs):
+    def __init__(self, deck_id, source, name, description, **kwargs):
+        self.deck_id = deck_id
+        self.source = source
         self.name = name
         self.description = description
         self.main = kwargs.get("main", [])
@@ -138,4 +129,5 @@ class Deck:
 @dataclasses.dataclass
 class DeckUpdate:
     deck_id: str  # ID of the deck within the relevant web service
-    updated: float  # UTC decimal timestamp of last updated time
+    source: str  # Short name of the source this deck is from
+    updated: int  # UTC timestamp of last updated time

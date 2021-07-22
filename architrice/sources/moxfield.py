@@ -31,8 +31,8 @@ class Moxfield(source.Source):
 
         return cards
 
-    def deck_to_generic_format(self, deck):
-        d = source.Deck(deck["name"], deck["description"])
+    def deck_to_generic_format(self, deck_id, deck):
+        d = self.create_deck(deck_id, deck["name"], deck["description"])
 
         for board in ["mainboard", "sideboard", "maybeboard", "commanders"]:
             d.add_cards(self.parse_to_cards(deck.get(board, {})), board)
@@ -41,7 +41,8 @@ class Moxfield(source.Source):
 
     def _get_deck(self, deck_id):
         return self.deck_to_generic_format(
-            requests.get(f"{Moxfield.URL_BASE}v2/decks/all/{deck_id}").json()
+            deck_id,
+            requests.get(f"{Moxfield.URL_BASE}v2/decks/all/{deck_id}").json(),
         )
 
     def deck_list_to_generic_format(self, decks):
@@ -49,7 +50,8 @@ class Moxfield(source.Source):
         for deck in decks:
             ret.append(
                 source.DeckUpdate(
-                    self.format_deck_id(deck["publicId"]),
+                    deck["publicId"],
+                    self.short,
                     utils.parse_iso_8601(deck["lastUpdatedAtUtc"]),
                 )
             )

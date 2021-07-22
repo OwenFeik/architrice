@@ -1,4 +1,3 @@
-import datetime
 import re
 
 import bs4
@@ -33,8 +32,10 @@ class TappedOut(source.Source):
                 )
         return cards
 
-    def deck_to_generic_format(self, mtga_deck, name, description, commanders):
-        d = source.Deck(name, description)
+    def deck_to_generic_format(
+        self, deck_id, mtga_deck, name, description, commanders
+    ):
+        d = self.create_deck(deck_id, name, description)
 
         SIDEBOARD_SEPERATOR = "\n\n"
         if SIDEBOARD_SEPERATOR in mtga_deck:
@@ -86,12 +87,12 @@ class TappedOut(source.Source):
         ).get("content")
 
         return self.deck_to_generic_format(
-            mtga_deck, name, description, commanders
+            deck_id, mtga_deck, name, description, commanders
         )
 
     def age_string_to_timestamp(self, string):
         # No timestamp, so parse the string for an approximation
-        now = datetime.datetime.utcnow().timestamp()
+        now = utils.time_now()
         if string == "Updated a few seconds ago.":
             return now
         elif m := re.match(
@@ -156,7 +157,9 @@ class TappedOut(source.Source):
                         break
 
                 decks.append(
-                    source.DeckUpdate(self.format_deck_id(deck_id), updated)
+                    source.DeckUpdate(
+                        self.format_deck_id(deck_id), self.short, updated
+                    )
                 )
 
             i += 1

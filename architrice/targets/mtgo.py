@@ -1,6 +1,8 @@
 import os
 import xml.etree.cElementTree as et
 
+from .. import utils
+
 from . import target
 
 
@@ -8,21 +10,27 @@ class Mtgo(target.Target):
     NAME = "MTGO"
     SHORT = "M"
     DECK_DIRECTORYS = [
-        os.path.join(
-            os.getenv("APPDATA"),
-            "Wizards of the Coast",
-            "Magic Online",
-            "3.0",
-            "Decks",
+        utils.expand_path(
+            os.path.join(
+                os.getenv("APPDATA"),
+                "Wizards of the Coast",
+                "Magic Online",
+                "3.0",
+                "Decks",
+            )
         ),
-        os.path.join(
-            "C:",
-            "Program Files",
-            "Wizards of the Coast",
-            "Magic Online",
-            "Decks",
+        utils.expand_path(
+            os.path.join(
+                "C:",
+                "Program Files",
+                "Wizards of the Coast",
+                "Magic Online",
+                "Decks",
+            )
         ),
-        os.path.join(os.getenv("USERPROFILE"), "Documents", "Decks"),
+        utils.expand_path(
+            os.path.join(os.getenv("USERPROFILE"), "Documents", "Decks")
+        ),
     ]
     DECK_FILE_EXTENSION = ".dek"
 

@@ -23,13 +23,13 @@ Architrice is available on PyPi so you can install it with
 or better.
 ## Getting Started
 To get started run `python -m architrice` for a simple wizard, or use the `-s`,
-`-u` and `-p` command line options to configure as in
+`-u`, `-t`, `-p` and `-n` command line options to configure as in
 ```
-python -m architrice -n -s website_name -u website_username -p \
-    /path/to/deck/directory
+python -m architrice -a -s website_name -u website_username -t target_program \
+    -p /path/to/deck/directory -n profile_name
 ```
 To remove a configured profile use `python -m architrice -d` for a wizard, or
-specify source, user and path as above. To add another profile use `-n` . For
-detailed help, use `python -m architrice -h` .
+specify a unique subset of source, user, target, path and name as above. To add
+another profile use `-a` . For detailed help, use `python -m architrice -h` .
 
 Only your public decks can be seen and downloaded by Architrice.

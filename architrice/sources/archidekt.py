@@ -13,8 +13,8 @@ class Archidekt(source.Source):
     def __init__(self):
         super().__init__(Archidekt.NAME, Archidekt.SHORT)
 
-    def deck_to_generic_format(self, deck):
-        d = source.Deck(deck["name"], deck["description"])
+    def deck_to_generic_format(self, deck_id, deck):
+        d = self.create_deck(deck_id, deck["name"], deck["description"])
 
         for card in deck["cards"]:
             c = source.Card(
@@ -36,10 +36,11 @@ class Archidekt(source.Source):
 
     def _get_deck(self, deck_id, small=True):
         return self.deck_to_generic_format(
+            deck_id,
             requests.get(
                 Archidekt.URL_BASE + deck_id + "/" + "small/" if small else "/",
                 params={"format": "json"},
-            ).json()
+            ).json(),
         )
 
     def deck_list_to_generic_format(self, decks):
@@ -47,7 +48,8 @@ class Archidekt(source.Source):
         for deck in decks:
             ret.append(
                 source.DeckUpdate(
-                    self.format_deck_id(str(deck["id"])),
+                    str(deck["id"]),
+                    self.short,
                     utils.parse_iso_8601(deck["updatedAt"]),
                 )
             )

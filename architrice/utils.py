@@ -56,17 +56,31 @@ def create_file_name(deck_name):
     return re.sub("[^a-z0-9_ ]+", "", deck_name.lower()).replace(" ", "_")
 
 
+def time_now():
+    return int(datetime.datetime.utcnow().timestamp())
+
+
+def timestamp_to_utc(timestamp):
+    return int(datetime.datetime.utcfromtimestamp(timestamp).timestamp())
+
+
 def parse_iso_8601(time_string):
-    return datetime.datetime.strptime(
-        time_string, "%Y-%m-%dT%H:%M:%S.%fZ"
-    ).timestamp()
+    return int(
+        datetime.datetime.strptime(
+            time_string, "%Y-%m-%dT%H:%M:%S.%fZ"
+        ).timestamp()
+    )
 
 
 def expand_path(path):
+    if path is None:
+        return None
     return os.path.abspath(os.path.expanduser(path))
 
 
 def check_dir(path):
+    if path is None:
+        return False
     if os.path.isfile(path):
         return False
     if not os.path.isdir(path):

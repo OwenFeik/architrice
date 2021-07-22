@@ -17,44 +17,87 @@ class Database:
         self.tables_to_init = tables
         self.tables = {}
 
-    def init(self):
+    def init(self, initial_setup=False):
+        """Connect to and set up the database for user."""
         self.conn = sqlite3.connect(self.file)
         self.cursor = self.conn.cursor()
-        self.execute(f"PRAGMA user_version = {Database.USER_VERSION};")
+
+        logging.debug("Connected to database.")
+
+        if initial_setup:
+            self.execute(f"PRAGMA user_version = {Database.USER_VERSION};")
         self.execute("PRAGMA foreign_keys = ON;")
 
         if self.tables_to_init is not None:
             for table in self.tables_to_init:
-                self.add_table(table)
+                self.add_table(table, initial_setup)
 
         self.tables_to_init = None
 
-        logging.debug("Connected to database.")
-
-    def add_table(self, table):
-        table.set_db(self)
+    def add_table(self, table, create=False):
+        """Add a Table to the database, creating it if necessary."""
+        table.set_db(self, create)
         self.tables[table.name] = table
 
     def insert(self, table, **kwargs):
+        """Execute an INSERT into table using kwarg keys and values."""
         self.tables[table].insert(**kwargs)
         return self.cursor.lastrowid
 
     def upsert(self, table, **kwargs):
+        """Execute an INSERT OR REPLACE into table."""
         kwargs["replace"] = True
         self.tables[table].insert(**kwargs)
         return self.cursor.lastrowid
 
     def insert_many(self, table, **kwargs):
+        """Execute many INSERTs into table, using kwarg keys and value lists."""
         self.tables[table].insert_many(**kwargs)
 
     def upsert_many(self, table, **kwargs):
+        """Execute many INSERT OR REPLACEs into table."""
         kwargs["replace"] = True
         self.tables[table].insert_many(**kwargs)
 
-    def select(self, table, **kwargs):
-        return self.tables[table].select(**kwargs)
+    def select(self, table, columns="*", **kwargs):
+        """SELECT columns FROM table WHERE kwargs keys = kwarg values."""
+        if isinstance(columns, list):
+            columns = ", ".join(columns)
+
+        return self.tables[table].select(columns, **kwargs)
+
+    def select_one(self, table, columns="*", **kwargs):
+        """Return the first tuple resulting from this select."""
+        result = self.select(table, columns, **kwargs)
+        if result:
+            return result[0]
+        return None
+
+    def select_one_column(self, table, column, **kwargs):
+        """Return the first column of the first tuple from this select."""
+        result = self.select(table, column, **kwargs)
+        if result:
+            return result[0][0]
+        return None
+
+    def select_ignore_none(self, table, columns="*", **kwargs):
+        """Perform a SELECT, ignoring all kwargs which are None."""
+        none_values = []
+        for key in kwargs:
+            if kwargs[key] is None:
+                none_values.append(key)
+
+        for key in none_values:
+            del kwargs[key]
+
+        return self.select(table, columns, **kwargs)
+
+    def delete(self, table, **kwargs):
+        """DELETE FROM table WHERE kwarg keys = kwarg values."""
+        self.tables[table].delete(**kwargs)
 
     def execute(self, command, tup=None):
+        """Execute an SQL command, logging the command and data."""
         if tup:
             logging.debug(
                 f"Executing database command: {command} with values {tup}."
@@ -64,32 +107,38 @@ class Database:
         return self.cursor.execute(command)
 
     def execute_many(self, command, tups):
+        """Execute many SQL commands."""
         return self.conn.executemany(command, tups)
 
     def commit(self):
+        """Commit database changes."""
         self.conn.commit()
 
     def close(self):
+        """Close the database connection."""
         self.conn.close()
 
 
 @dataclasses.dataclass
 class Column:
-    name: str  # note: replace is a reserved name
+    name: str  # note: replace and columns are reserved names
     datatype: str
     primary_key: bool = False
-    references: str = None  # This column is a foreign key to this table
+    references: str = None  # Foreign key to this table. Cascade delete.
+    not_null: bool = False
     unique: bool = False  # Is this column unique
     index_on: bool = False  # Create an index on this column?
 
     def __str__(self):
         column_def = f"{self.name} {self.datatype}"
+        if self.not_null:
+            column_def += " NOT NULL"
         if self.primary_key:
             column_def += " PRIMARY KEY"
         if self.unique:
             column_def += " UNIQUE"
         if self.references:
-            column_def += f" REFERENCES {self.references}"
+            column_def += f" REFERENCES {self.references} ON DELETE CASCADE"
         return column_def
 
 
@@ -100,9 +149,9 @@ class Table:
         self.constraints = constraints or []
         self.set_db(db)
 
-    def set_db(self, db):
+    def set_db(self, db, create=True):
         self.db = db
-        if db:
+        if db and create:
             self.create()
 
     def create(self):
@@ -147,22 +196,29 @@ class Table:
             zip(kwargs[name] for name in column_names),
         )
 
-    def select(self, **kwargs):
+    def where_string(self, column_names):
+        return (
+            (" WHERE " + " AND ".join([f"{name} = ?" for name in column_names]))
+            if column_names
+            else ""
+        )
+
+    def select(self, column_string, **kwargs):
         column_names = self.column_names(**kwargs)
         return list(
             self.db.execute(
-                f"SELECT * FROM {self.name}"
-                + (
-                    (
-                        " WHERE "
-                        + " AND ".join([f"{name} = ?" for name in column_names])
-                    )
-                    if column_names
-                    else ""
-                )
+                f"SELECT {column_string} FROM {self.name}"
+                + self.where_string(column_names)
                 + ";",
                 [kwargs[name] for name in column_names],
             )
+        )
+
+    def delete(self, **kwargs):
+        column_names = self.column_names(**kwargs)
+        self.db.execute(
+            f"DELETE FROM {self.name}" + self.where_string(column_names) + ";",
+            [kwargs[name] for name in column_names],
         )
 
 
@@ -173,64 +229,68 @@ database = Database(
             "sources",
             [
                 Column("short", "TEXT", primary_key=True),
-                Column("name", "TEXT", unique=True),
+                Column("name", "TEXT", not_null=True, unique=True),
             ],
         ),
         Table(
             "targets",
             [
                 Column("short", "TEXT", primary_key=True),
-                Column("name", "TEXT", unique=True),
+                Column("name", "TEXT", not_null=True, unique=True),
             ],
         ),
         Table(
             "dirs",
             [
                 Column("id", "INTEGER", primary_key=True),
-                Column("path", "TEXT", unique=True),
+                Column("path", "TEXT", not_null=True, unique=True),
             ],
         ),
         Table(
             "profile_dirs",
             [
                 Column("id", "INTEGER", primary_key=True),
-                Column("target", "TEXT", references="targets"),
-                Column("dir", "INTEGER", references="dirs"),
-                Column("profile", "INTEGER", references="profiles"),
+                Column("target", "TEXT", references="targets", not_null=True),
+                Column("dir", "INTEGER", references="dirs", not_null=True),
+                Column(
+                    "profile", "INTEGER", references="profiles", not_null=True
+                ),
             ],
         ),
         Table(
             "profiles",
             [
                 Column("id", "INTEGER", primary_key=True),
-                Column("source", "TEXT", references="sources"),
-                Column("user", "TEXT"),
+                Column("source", "TEXT", references="sources", not_null=True),
+                Column("user", "TEXT", not_null=True),
                 Column("name", "TEXT", unique=True),
             ],
         ),
         Table(
             "cards",
             [
+                Column("id", "INTEGER", primary_key=True),
                 Column("name", "TEXT", unique=True, index_on=True),
-                Column("mtgo_id", "INTEGER", unique=True),
-                Column("is_dfc", "INTEGER"),
+                Column("mtgo_id", "INTEGER", not_null=True, unique=True),
+                Column("is_dfc", "INTEGER", not_null=True),
             ],
         ),
         Table(
             "decks",
             [
                 Column("id", "INTEGER", primary_key=True),
-                Column("deck_id", "TEXT", unique=True, index_on=True),
-                Column("source", "TEXT", references="sources"),
+                Column("deck_id", "TEXT", not_null=True, index_on=True),
+                Column("source", "TEXT", not_null=True, references="sources"),
             ],
+            ["UNIQUE(deck_id, source)"],
         ),
         Table(
             "deck_files",
             [
                 Column("id", "INTEGER", primary_key=True),
-                Column("deck", "INTEGER", references="decks"),
-                Column("file_name", "TEXT"),
-                Column("dir", "INTEGER", references="dirs"),
+                Column("deck", "INTEGER", references="decks", not_null=True),
+                Column("file_name", "TEXT", not_null=True),
+                Column("dir", "INTEGER", references="dirs", not_null=True),
                 Column("updated", "INTEGER"),
             ],
             ["UNIQUE(file_name, dir)"],
@@ -243,6 +303,11 @@ insert_many = database.insert_many
 upsert = database.upsert
 upsert_many = database.upsert_many
 select = database.select
+select_one = database.select_one
+select_one_column = database.select_one_column
+select_ignore_none = database.select_ignore_none
+delete = database.delete
+execute = database.execute
 commit = database.commit
 close = database.close
 
@@ -250,7 +315,7 @@ close = database.close
 def init():
     initial_setup = not os.path.exists(DATABASE_FILE)
     utils.ensure_data_dir()
-    database.init()
+    database.init(initial_setup)
     if initial_setup:
         logging.debug("Performing first-time database setup.")
 

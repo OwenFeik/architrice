@@ -10,10 +10,13 @@ _sources = {}
 
 
 def get_source(name):
+    if name is None:
+        return None
+
     name = name.lower()  # case insensitivity
     for source in sourcelist:
         if source.NAME.lower() == name or source.SHORT.lower() == name:
             if source.SHORT not in _sources:
                 _sources[source.SHORT] = source()
             return _sources[source.SHORT]
-    raise ValueError(f'No source named "{name}" exists.')
+    return None

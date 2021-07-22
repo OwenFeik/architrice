@@ -3,13 +3,11 @@
 import argparse
 import logging
 import os
-import re
 import subprocess
 import sys
 
 from . import caching
 from . import cli
-from . import database
 from . import sources
 from . import targets
 from . import utils
@@ -23,7 +21,7 @@ link between an online source and a local directory. Future runs of {APP_NAME}
 will then download all decklists that have been updated or created since the
 last run to that directory. 
 
-To add another download profile beyond this first one, run {APP_NAME} -n.
+To add another download profile beyond this first one, run {APP_NAME} -a.
 
 To delete an existing profile, run {APP_NAME} -d, which will launch a wizard to
 do so.
@@ -33,9 +31,9 @@ To download only the most recently updated decklist for each profile, run
 
 To set up a new profile or delete a profile without CLI, specify
 non-interactivity with the -i or --non-interactive flag and use the flags for
-source, user and path as in 
-{APP_NAME} -i -s SOURCE -u USER -p PATH -n
-Replace -n with -d to delete instead of creating. 
+source, user, target, path and name as in 
+{APP_NAME} -i -s SOURCE -u USER -t TARGET -p PATH -n NAME -a
+Replace -a with -d to delete instead of creating. 
 
 To skip updating decklists while using other functionality, include the -k flag.
 
@@ -45,6 +43,9 @@ To add shortcuts to launch {APP_NAME} alongside Cockatrice, run {APP_NAME} -r.
 
 def get_source(name, picker=False):
     if name is not None:
+        if not isinstance(name, str):
+            return name
+
         try:
             if source := sources.get_source(name):
                 return source
@@ -65,6 +66,9 @@ def source_picker():
 
 def get_target(name, picker=False):
     if name is not None:
+        if not isinstance(name, str):
+            return name
+
         try:
             if target := targets.get_target(name):
                 return target
@@ -99,65 +103,93 @@ def get_verified_user(source, user, interactive=False):
     return user
 
 
-def add_profile(
-    cache, interactive, source=None, target=None, user=None, path=None
-):
-    if not (source := get_source(source, interactive)):
-        logging.error("No source specified. Unable to add profile.")
+def get_output_path(cache, interactive, target, path):
+    if path is not None:
+        if utils.check_dir(path):
+            return path
+        else:
+            logging.error(
+                f"A file exists at {path} so it can't be used as an output "
+                "directory."
+            )
+            if not interactive:
+                return
+            path = None
+
+    if cache.dir_caches and cli.get_decision("Use existing output directory?"):
+        if len(cache.dir_caches) == 1:
+            path = cache.dir_caches[0].path
+            logging.info(f"Only one existing directory, defaulting to {path}.")
+        else:
+            path = cli.get_choice(
+                [d.path for d in cache.dir_caches],
+                "Which existing directory should be used for these decks?",
+            )
+    else:
+        path = target.suggest_directory()
+        if not (
+            (os.path.isdir(path))
+            and cli.get_decision(
+                f"Found {target.name} deck directory at {path}."
+                " Output decklists here?"
+            )
+        ):
+            return get_output_path(
+                cache, interactive, target, cli.get_path("Output directory")
+            )
+    return path
+
+
+def add_profile_dir(cache, interactive, profile, target=None, path=None):
+    if profile is None:
         return
 
     if not (target := get_target(target, interactive)):
         logging.error("No target specified. Unable to add profile.")
         return
 
+    cache.build_profile_dir(
+        profile, target, get_output_path(cache, interactive, target, path)
+    )
+
+
+def add_profile(
+    cache,
+    interactive,
+    source=None,
+    target=None,
+    user=None,
+    path=None,
+    name=None,
+):
+    if not (source := get_source(source, interactive)):
+        logging.error("No source specified. Unable to add profile.")
+        return
+
     if not (user := get_verified_user(source, user, interactive)):
         logging.error("No user provided. Unable to add profile.")
         return
 
-    if path and not utils.check_dir(path):
-        logging.error(
-            f"A file exists at {path} so it can't be used as an output "
-            "directory."
-        )
-        if not interactive:
-            return
-        path = None
+    if name is None and interactive and cli.get_decision("Name this profile?"):
+        name = cli.get_string("Profile name")
 
-    if not path:
-        if cache.dir_caches and cli.get_decision(
-            "Use existing output directory?"
-        ):
-            if len(cache.dir_caches) == 1:
-                path = cache.dir_caches[0].path
-                logging.info(
-                    f"Only one existing directory, defaulting to {path}."
-                )
-            else:
-                path = cli.get_choice(
-                    [d.path for d in cache.dir_caches],
-                    "Which existing directory should be used for these decks?",
-                )
-        else:
-            path = target.suggest_directory()
-            if not (
-                (os.path.isdir(path))
-                and cli.get_decision(
-                    f"Found {target.name} deck directory at {path}."
-                    " Output decklists here?"
-                )
-            ):
-                path = cli.get_path("Output directory")
-
-    cache.build_profile(source, target, user, path)
+    add_profile_dir(
+        cache,
+        interactive,
+        cache.build_profile(source, user, name),
+        target,
+        path,
+    )
 
 
 def delete_profile(
-    cache, interactive, source=None, target=None, user=None, path=None
+    cache,
+    interactive,
+    source=None,
+    user=None,
+    name=None,
 ):
-    source = get_source(source)
-    target = get_target(target)
-
-    options = cache.filter_profiles(source, target, user, path)
+    options = cache.filter_profiles(source, user, name)
 
     if not options:
         logging.info("No matching profiles exist, ignoring delete option.")
@@ -177,20 +209,19 @@ def delete_profile(
 
 
 def update_decks(
-    cache, latest=False, source=None, target=None, user=None, path=None
+    cache,
+    latest=False,
+    source=None,
+    target=None,
+    user=None,
+    path=None,
+    name=None,
 ):
-    profiles = cache.filter_profiles(source, target, user, path)
+    profiles = cache.filter_profiles(source, user, name)
     if not profiles:
         logging.info("No profiles match filters, nothing to do.")
     for profile in profiles:
-        if not utils.check_dir(profile.path):
-            logging.error(
-                f"Output directory {profile.path} already exists and is a file."
-                f"Skipping {profile.user_string} download."
-            )
-            continue
-
-        profile.update(latest)
+        profile.update(latest, target, cache.get_dir_cache(path))
 
 
 # TODO: mtgo shortcuts
@@ -203,7 +234,7 @@ def set_up_shortcuts():
             not cli.get_decision("Automatically update all shortcuts?"),
         )
     elif os.name == "posix":
-        ARCHITRICE_PATH = f"/usr/bin/{APP_NAME}"
+        APP_PATH = f"/usr/bin/{APP_NAME}"
         if cli.get_decision(
             "Add script to run Cockatrice and Architrice to path?"
         ):
@@ -211,7 +242,7 @@ def set_up_shortcuts():
             with open(script_path, "w") as f:
                 f.write(f"cockatrice &\n{sys.executable} -m {APP_NAME} -q")
             os.chmod(script_path, 0o755)
-            subprocess.call(["sudo", "mv", script_path, ARCHITRICE_PATH])
+            subprocess.call(["sudo", "mv", script_path, APP_PATH])
             logging.info(
                 f'Running "{APP_NAME}" will now launch '
                 f"Cockatrice and run {APP_NAME}."
@@ -237,10 +268,11 @@ def parse_args():
     parser.add_argument(
         "-p", "--path", dest="path", help="set deck file output directory"
     )
+    parser.add_argument("-n", "--name", dest="name", help="set profile name")
     parser.add_argument(
-        "-n",
-        "--new",
-        dest="new",
+        "-a",
+        "--add",
+        dest="add",
         help="launch wizard to add a new profile",
         action="store_true",
     )
@@ -298,20 +330,15 @@ def parse_args():
 
 def main():
     args = parse_args()
-    path = utils.expand_path(args.path) if args.path else None
+    source = sources.get_source(args.source)
+    target = targets.get_target(args.target)
+    path = utils.expand_path(args.path)
 
     utils.set_up_logger(
         0 if args.quiet else args.verbosity + 1 if args.verbosity else 1
     )
 
-    database.init()
-    database.commit()
-
-    print(database.select("decks"))
-
-    exit()
-
-    cache = caching.Cache.load()
+    cache = caching.Cache.load(source, target, args.user, path, args.name)
 
     if args.relink:
         set_up_shortcuts()
@@ -322,12 +349,12 @@ def main():
             "Set up shortcuts to run Architrice when launching Cockatrice?"
         ):
             set_up_shortcuts()
-    elif args.new:
+    elif args.add:
         add_profile(
             cache,
             args.interactive,
-            args.source,
-            args.target,
+            source,
+            target,
             args.user,
             path,
         )
@@ -336,16 +363,12 @@ def main():
         delete_profile(
             cache,
             args.interactive,
-            args.source,
-            args.target,
+            source,
             args.user,
-            path,
         )
 
     if not args.skip_update:
-        update_decks(
-            cache, args.latest, args.source, args.target, args.user, path
-        )
+        update_decks(cache, args.latest, source, target, args.user, path)
 
     cache.save()
 

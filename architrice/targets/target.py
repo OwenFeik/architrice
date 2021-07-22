@@ -1,5 +1,7 @@
 import abc
 
+from .. import utils
+
 
 class Target(abc.ABC):
     def __init__(self, name, short, file_extension):
@@ -14,4 +16,4 @@ class Target(abc.ABC):
         pass
 
     def create_file_name(self, deck_name):
-        return deck_name + self.file_extension
+        return utils.create_file_name(deck_name) + self.file_extension

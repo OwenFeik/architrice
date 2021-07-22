@@ -6,6 +6,8 @@ import sys
 from . import cli
 from . import utils
 
+# TODO: -t RELEVANT_TARGET, remove -q
+
 # List of common shortcut locations on windows
 # ("Friendly name", "path\\to\\dir")
 SHORTCUT_PATHS = [
