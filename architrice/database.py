@@ -1,4 +1,5 @@
 import dataclasses
+import enum
 import logging
 import os
 import sqlite3
@@ -16,10 +17,11 @@ class Database:
         self.conn = self.cursor = None
         self.tables_to_init = tables
         self.tables = {}
+        self.log = True
 
     def init(self, initial_setup=False):
         """Connect to and set up the database for user."""
-        self.conn = sqlite3.connect(self.file)
+        self.conn = sqlite3.connect(self.file, check_same_thread=False)
         self.cursor = self.conn.cursor()
 
         logging.debug("Connected to database.")
@@ -99,15 +101,19 @@ class Database:
     def execute(self, command, tup=None):
         """Execute an SQL command, logging the command and data."""
         if tup:
-            logging.debug(
-                f"Executing database command: {command} with values {tup}."
-            )
+            if self.log:
+                logging.debug(
+                    f"Executing database command: {command} with values {tup}."
+                )
             return self.cursor.execute(command, tup)
-        logging.debug(f"Executing database command: {command}")
+        if self.log:
+            logging.debug(f"Executing database command: {command}")
         return self.cursor.execute(command)
 
     def execute_many(self, command, tups):
         """Execute many SQL commands."""
+        if self.log:
+            logging.debug(f"Executing many with command: {command}")
         return self.conn.executemany(command, tups)
 
     def commit(self):
@@ -117,6 +123,14 @@ class Database:
     def close(self):
         """Close the database connection."""
         self.conn.close()
+
+    def enable_logging(self):
+        """Enable command logging."""
+        self.log = True
+
+    def disable_logging(self):
+        """Disable command logging."""
+        self.log = False
 
 
 @dataclasses.dataclass
@@ -193,7 +207,7 @@ class Table:
         column_names = self.column_names(**kwargs)
         self.db.execute_many(
             self.insert_command(column_names, kwargs.get("replace")),
-            zip(kwargs[name] for name in column_names),
+            zip(*[kwargs[name] for name in column_names]),
         )
 
     def where_string(self, column_names):
@@ -220,6 +234,10 @@ class Table:
             f"DELETE FROM {self.name}" + self.where_string(column_names) + ";",
             [kwargs[name] for name in column_names],
         )
+
+
+class DatabaseEvents(enum.Enum):
+    CARD_LIST_UPDATE = 1
 
 
 database = Database(
@@ -271,7 +289,7 @@ database = Database(
             [
                 Column("id", "INTEGER", primary_key=True),
                 Column("name", "TEXT", unique=True, index_on=True),
-                Column("mtgo_id", "INTEGER", not_null=True, unique=True),
+                Column("mtgo_id", "INTEGER", unique=True),
                 Column("is_dfc", "INTEGER", not_null=True),
             ],
         ),
@@ -295,6 +313,13 @@ database = Database(
             ],
             ["UNIQUE(file_name, dir)"],
         ),
+        Table(
+            "database_events",
+            [
+                Column("id", "INTEGER", primary_key=True),
+                Column("last_time", "INTEGER", not_null=True),
+            ],
+        ),
     ],
 )
 
@@ -310,6 +335,8 @@ delete = database.delete
 execute = database.execute
 commit = database.commit
 close = database.close
+enable_logging = database.enable_logging
+disable_logging = database.disable_logging
 
 
 def init():

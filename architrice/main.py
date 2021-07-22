@@ -1,5 +1,7 @@
 #!/bin/python3
 
+from architrice import database
+from architrice.targets import mtgo
 import argparse
 import logging
 import os

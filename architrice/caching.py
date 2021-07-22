@@ -155,8 +155,7 @@ class Cache:
             dir_caches.append(dir_cache)
 
             for tup in database.execute(
-                "SELECT "
-                "d.deck_id, d.source, df.id, df.file_name, df.updated "
+                "SELECT d.deck_id, d.source, df.id, df.file_name, df.updated "
                 "FROM deck_files df LEFT JOIN decks d ON df.deck = d.id "
                 "WHERE df.dir = ?;",
                 (dir_cache.id,),
