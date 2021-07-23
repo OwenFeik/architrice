@@ -47,8 +47,8 @@ class Database:
         return self.cursor.lastrowid
 
     def upsert(self, table, **kwargs):
-        """Execute an INSERT OR REPLACE into table."""
-        kwargs["replace"] = True
+        """Execute an INSERT into table, updating on conflict."""
+        kwargs["update"] = True
         self.tables[table].insert(**kwargs)
         return self.cursor.lastrowid
 
@@ -57,8 +57,8 @@ class Database:
         self.tables[table].insert_many(**kwargs)
 
     def upsert_many(self, table, **kwargs):
-        """Execute many INSERT OR REPLACEs into table."""
-        kwargs["replace"] = True
+        """Execute many upserts into table."""
+        kwargs["update"] = True
         self.tables[table].insert_many(**kwargs)
 
     def select(self, table, columns="*", **kwargs):
@@ -135,7 +135,7 @@ class Database:
 
 @dataclasses.dataclass
 class Column:
-    name: str  # note: replace and columns are reserved names
+    name: str  # note: update and columns are reserved names
     datatype: str
     primary_key: bool = False
     references: str = None  # Foreign key to this table. Cascade delete.
@@ -182,32 +182,51 @@ class Table:
                     f"ON {self.name} ({c.name});"
                 )
 
-    def insert_command(self, column_names, replace=False):
+    def insert_command(self, column_names, update=False):
         return (
             "INSERT "
-            + ("OR REPLACE " if replace else "")
             + f"INTO {self.name} ("
             + ", ".join(column_names)
             + ") VALUES ("
             + ("?, " * len(column_names))[:-2]
-            + ");"
+            + ")"
+            + (
+                (
+                    " ON CONFLICT DO UPDATE SET ("
+                    + ", ".join(column_names)
+                    + ") = ("
+                    + ("?, " * len(column_names))[:-2]
+                    + ")"
+                )
+                if update
+                else ""
+            )
+            + ";"
         )
 
     def column_names(self, **kwargs):
         return [c.name for c in self.columns if c.name in kwargs]
 
-    def insert(self, **kwargs):
+    def create_insert_args(self, **kwargs):
         column_names = self.column_names(**kwargs)
+        arguments = [kwargs[name] for name in column_names]
+        if kwargs.get("update"):
+            arguments *= 2
+        return (column_names, arguments)
+
+    def insert(self, **kwargs):
+        column_names, arguments = self.create_insert_args(**kwargs)
         self.db.execute(
-            self.insert_command(column_names, kwargs.get("replace")),
-            [kwargs[name] for name in column_names],
+            self.insert_command(column_names, kwargs.get("update")),
+            arguments,
         )
 
     def insert_many(self, **kwargs):
-        column_names = self.column_names(**kwargs)
+        column_names, arguments = self.create_insert_args(**kwargs)
+        arguments = zip(*arguments)
         self.db.execute_many(
-            self.insert_command(column_names, kwargs.get("replace")),
-            zip(*[kwargs[name] for name in column_names]),
+            self.insert_command(column_names, kwargs.get("update")),
+            arguments,
         )
 
     def where_string(self, column_names):
@@ -291,6 +310,8 @@ database = Database(
                 Column("name", "TEXT", unique=True, index_on=True),
                 Column("mtgo_id", "INTEGER", unique=True),
                 Column("is_dfc", "INTEGER", not_null=True),
+                Column("collector_number", "TEXT", not_null=True),
+                Column("edition", "TEXT", not_null=True),
             ],
         ),
         Table(
@@ -317,7 +338,7 @@ database = Database(
             "database_events",
             [
                 Column("id", "INTEGER", primary_key=True),
-                Column("last_time", "INTEGER", not_null=True),
+                Column("time", "INTEGER", not_null=True),
             ],
         ),
     ],

@@ -4,6 +4,8 @@ from .. import utils
 
 
 class Target(abc.ABC):
+    SUPPORTED_OS = ["posix", "nt"]
+
     def __init__(self, name, short, file_extension):
         self.name = name
         self.short = short

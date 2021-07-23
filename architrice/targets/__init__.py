@@ -1,7 +1,9 @@
+import os
+
 from .cockatrice import Cockatrice
 from .mtgo import Mtgo
 
-targetlist = [Cockatrice, Mtgo]
+targetlist = [t for t in [Cockatrice, Mtgo] if os.name in t.SUPPORTED_OS]
 
 # singleton cache; sources have no data so only a single instance is required
 _sources = {}

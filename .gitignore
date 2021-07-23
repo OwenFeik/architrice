@@ -5,3 +5,7 @@ __pycache*
 *.egg-info
 *.log
 */data/*
+env/*
+out/*
+.vscode
+*.json

@@ -156,11 +156,7 @@ class TappedOut(source.Source):
                         updated = self.age_string_to_timestamp(h5.text.strip())
                         break
 
-                decks.append(
-                    source.DeckUpdate(
-                        self.format_deck_id(deck_id), self.short, updated
-                    )
-                )
+                decks.append(source.DeckUpdate(deck_id, self.short, updated))
 
             i += 1
 
