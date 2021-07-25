@@ -66,20 +66,21 @@ class Database:
         if isinstance(columns, list):
             columns = ", ".join(columns)
 
+        # Note: returns cursor; use list(db.select(...)) to get raw values.
         return self.tables[table].select(columns, **kwargs)
 
     def select_one(self, table, columns="*", **kwargs):
         """Return the first tuple resulting from this select."""
-        result = self.select(table, columns, **kwargs)
+        result = list(self.select(table, columns, **kwargs))
         if result:
             return result[0]
         return None
 
     def select_one_column(self, table, column, **kwargs):
         """Return the first column of the first tuple from this select."""
-        result = self.select(table, column, **kwargs)
+        result = self.select_one(table, column, **kwargs)
         if result:
-            return result[0][0]
+            return result[0]
         return None
 
     def select_ignore_none(self, table, columns="*", **kwargs):
@@ -94,8 +95,11 @@ class Database:
 
         return self.select(table, columns, **kwargs)
 
+    def select_where_in(self, table, field, values, columns="*"):
+        """SELECT columns FROM table WHERE field in values"""
+
     def delete(self, table, **kwargs):
-        """DELETE FROM table WHERE kwarg keys = kwarg values."""
+        """DELETE FROM table WHERE kwarg keys = kwarg values"""
         self.tables[table].delete(**kwargs)
 
     def execute(self, command, tup=None):
@@ -238,13 +242,19 @@ class Table:
 
     def select(self, column_string, **kwargs):
         column_names = self.column_names(**kwargs)
-        return list(
-            self.db.execute(
-                f"SELECT {column_string} FROM {self.name}"
-                + self.where_string(column_names)
-                + ";",
-                [kwargs[name] for name in column_names],
-            )
+        return self.db.execute(
+            f"SELECT {column_string} FROM {self.name}"
+            + self.where_string(column_names)
+            + ";",
+            [kwargs[name] for name in column_names],
+        )
+
+    def select_where_in(self, field, values, column_string):
+        return self.db.execute(
+            f"SELECT {column_string} FROM {self.name} WHERE {field} IN ("
+            + ("?, " * len(values))[:-2]
+            + ");",
+            values,
         )
 
     def delete(self, **kwargs):

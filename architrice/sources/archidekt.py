@@ -17,7 +17,7 @@ class Archidekt(source.Source):
         d = self.create_deck(deck_id, deck["name"], deck["description"])
 
         for card in deck["cards"]:
-            c = source.Card(
+            c = source.DeckCard(
                 card["quantity"],
                 card["card"]["oracleCard"]["name"],
                 "dfc" in card["card"]["oracleCard"]["layout"],

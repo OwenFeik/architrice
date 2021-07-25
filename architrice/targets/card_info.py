@@ -1,4 +1,5 @@
 import dataclasses
+import functools
 import logging
 
 import requests
@@ -24,6 +25,7 @@ class CardInfo:
 # TODO PROBLEM: every thread will try to do this.
 # need to figure out a way to do it once if needed either before hand
 # or with other threads waiting on it.
+@functools.cache  # cache to save repeated db queries
 def update_card_list():
     download_info = requests.get(SCRYFALL_BULK_DATA_URL).json()
     logging.info(
@@ -103,3 +105,23 @@ def find(name):
     else:
         logging.error(f"Unable to find card info for {name}.")
         return None
+
+
+def find_many(names):
+    """Returns a {name: CardInfo} map with all cards in names."""
+    return {name: find(name) for name in names}
+
+
+def map_from_deck(deck):
+    """Returns a card info map from a sources.Deck."""
+    return find_many([card.name for card in deck.get_all_cards()])
+
+
+def map_from_decks(decks):
+    """Return a card info map with all cards that appear in decks."""
+    card_names = set()
+    for deck in decks:
+        for card in deck.get_all_cards():
+            card_names.add(card.name)
+
+    return find_many(card_names)

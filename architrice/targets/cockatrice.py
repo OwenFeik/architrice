@@ -31,6 +31,10 @@ class Cockatrice(target.Target):
     def save_deck(self, deck, path):
         deck_to_xml(deck, path)
 
+    def save_decks(self, deck_tuples):
+        for deck, path in deck_tuples:
+            self.save_deck(deck, path)
+
 
 def cockatrice_name(card):
     # Cockatrice implements dfcs as a seperate card each for the front and

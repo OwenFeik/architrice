@@ -14,16 +14,27 @@ class ProfileDir:
         self.dir = dir_cache
         self.id = db_id
 
-    def save_deck(self, deck):
+    def update_deck_file(self, deck):
         deck_file = self.dir.get_deck_file(deck.source, deck.deck_id)
-
         if deck_file.file_name is None:
             deck_file.file_name = self.target.create_file_name(deck.name)
-
-        self.target.save_deck(
-            deck, os.path.join(self.dir.path, deck_file.file_name)
-        )
         deck_file.update()
+        return deck_file
+
+    def save_deck(self, deck):
+        self.target.save_deck(
+            os.path.join(self.dir.path, self.update_deck_file(deck).file_name)
+        )
+
+    def save_decks(self, decks):
+        deck_tuples = []
+        for deck in decks:
+            deck_file = self.update_deck_file(deck)
+            deck_tuples.append(
+                (deck, os.path.join(self.dir.path, deck_file.file_name))
+            )
+
+        self.target.save_decks(deck_tuples)
 
 
 class Profile:
@@ -54,28 +65,38 @@ class Profile:
     def add_dir(self, profile_dir):
         self.dirs.append(profile_dir)
 
-    def download_deck(self, deck_id, outputs):
+    def save_deck(self, deck):
+        for profile_dir in self.dirs:
+            profile_dir.save_deck(deck)
+
+    def save_decks(self, decks):
+        for profile_dir in self.dirs:
+            profile_dir.save_decks(decks)
+
+    def download_deck(self, deck_id):
         logging.debug(f"Downloading {self.source.name} deck {deck_id}.")
 
-        deck = self.source.get_deck(deck_id)
-
-        for profile_dir in outputs:
-            profile_dir.save_deck(deck)
+        return self.source.get_deck(deck_id)
 
     # This is asynchronous so that it can use a ThreadPoolExecutor to speed up
     # perfoming many deck requests.
-    async def download_decks_pool(self, loop, decks, outputs):
-        logging.info(f"Downloading {len(decks)} decks for {self.user_string}.")
+    async def download_decks_pool(self, loop, deck_ids, outputs):
+        logging.info(
+            f"Downloading {len(deck_ids)} decks for {self.user_string}."
+        )
+
         with concurrent.futures.ThreadPoolExecutor(
             max_workers=THREAD_POOL_MAX_WORKERS
         ) as executor:
             futures = [
-                loop.run_in_executor(
-                    executor, self.download_deck, deck_id, outputs
-                )
-                for deck_id in decks
+                loop.run_in_executor(executor, self.download_deck, deck_id)
+                for deck_id in deck_ids
             ]
-            return await asyncio.gather(*futures)
+            decks = await asyncio.gather(*futures)
+
+        # Gather all decks and then save synchonously so that we can update the
+        # card database first if necessary.
+        self.save_decks(decks)
 
     def download_all(self, outputs):
         logging.info(f"Updating all decks for {self.user_string}.")
@@ -96,7 +117,7 @@ class Profile:
         latest = self.source.get_latest_deck(self.user)
         if any(profile_dir.dir.needs_update(latest) for profile_dir in outputs):
             logging.info(f"Updating latest deck for {self.user_string}.")
-            self.download_deck(latest.deck_id, outputs)
+            self.save_deck(self.download_deck(latest.deck_id))
         else:
             logging.info(
                 f"{self.source.name} user {self.user}"

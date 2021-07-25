@@ -76,7 +76,7 @@ class Source(abc.ABC):
 
 
 @dataclasses.dataclass
-class Card:
+class DeckCard:
     quantity: int
     name: str
     is_dfc: bool
@@ -92,6 +92,9 @@ class Deck:
         self.side = kwargs.get("side", [])
         self.maybe = kwargs.get("maybe", [])
         self.commanders = kwargs.get("commanders", [])
+
+    def get_all_cards(self):
+        return self.main + self.side + self.maybe
 
     def get_main_deck(self, include_commanders=False):
         if include_commanders:

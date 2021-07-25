@@ -20,7 +20,9 @@ class Deckstats(source.Source):
         return deck_id + f"?owner_id={owner_id}"
 
     def card_json_to_card(self, card):
-        return source.Card(card["amount"], card["name"], "//" in card["name"])
+        return source.DeckCard(
+            card["amount"], card["name"], "//" in card["name"]
+        )
 
     def deck_to_generic_format(self, deck_id, deck):
         d = self.create_deck(deck_id, deck["name"], "")

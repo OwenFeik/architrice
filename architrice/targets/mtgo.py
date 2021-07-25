@@ -33,9 +33,6 @@ class Mtgo(target.Target):
                     "Decks",
                 )
             ),
-            utils.expand_path(
-                os.path.join(os.getenv("USERPROFILE"), "Documents", "Decks")
-            ),
         ]
         if os.name == "nt"
         else []
@@ -48,46 +45,42 @@ class Mtgo(target.Target):
     def suggest_directory(self):
         for directory in Mtgo.DECK_DIRECTORYS:
             if os.path.exists(directory):
-                break
-        return directory
+                return directory
+        return super().suggest_directory()
 
-    def save_deck(self, deck, path):
-        return deck_to_xml(deck, path)
+    def save_deck(self, deck, path, card_info_map=None):
+        if card_info_map is None:
+            card_info_map = card_info.map_from_deck(deck)
+        return deck_to_xml(deck, path, card_info_map)
 
 
 def mtgo_name(card):
     return card.name.partition("//")[0].strip()
 
 
-def mtgo_id(card):
-    card_info.find(card.name).mtgo_id
+def add_card(root, card, card_info_map, in_sideboard=False):
+    mtgo_id = card_info_map.get(card.name).mtgo_id
+    if mtgo_id:
+        et.SubElement(
+            root,
+            "Cards",
+            CatID=mtgo_id,
+            Quantity=str(card.quantity),
+            Sideboard="true" if in_sideboard else "false",
+            Name=mtgo_name(card),
+            Annotation="0",
+        )
 
 
-def deck_to_xml(deck, outfile):
+def deck_to_xml(deck, outfile, card_info_map):
     root = et.Element("Deck")
 
     et.SubElement(root, "NetDeckID").text = "0"
     et.SubElement(root, "PreconstructedDeckID").text = "0"
 
     for card in deck.get_main_deck():
-        et.SubElement(
-            root,
-            "Cards",
-            CatID=mtgo_id(card),
-            Quantity=str(card.quantity),
-            Sideboard="false",
-            Name=mtgo_name(card),
-            Annotation="0",
-        )
+        add_card(root, card, card_info_map)
     for card in deck.get_sideboard():
-        et.SubElement(
-            root,
-            "Cards",
-            CatID=mtgo_id(card),
-            Quantity=str(card.quantity),
-            Sideboard="true",
-            Name=mtgo_name(card),
-            Annotation="0",
-        )
+        add_card(root, card, card_info_map, True)
 
     et.ElementTree(root).write(outfile, xml_declaration=True, encoding="utf-8")

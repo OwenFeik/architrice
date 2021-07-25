@@ -22,7 +22,7 @@ class Moxfield(source.Source):
         cards = []
         for k in board:
             cards.append(
-                source.Card(
+                source.DeckCard(
                     board[k]["quantity"],
                     k,
                     self.is_dfc(board[k]["card"]["layout"]),

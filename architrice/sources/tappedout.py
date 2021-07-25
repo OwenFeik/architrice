@@ -28,7 +28,7 @@ class TappedOut(source.Source):
                 # and no further processing needs doing, hence is_dfc can be
                 # False
                 cards.append(
-                    source.Card(m.group("qty"), m.group("name"), False)
+                    source.DeckCard(m.group("qty"), m.group("name"), False)
                 )
         return cards
 
