@@ -361,6 +361,8 @@ disable_logging = database.disable_logging
 
 
 def init():
+    """Connect to the database, setting it up if necessary."""
+
     initial_setup = not os.path.exists(DATABASE_FILE)
     utils.ensure_data_dir()
     database.init(initial_setup)
