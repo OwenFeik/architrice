@@ -9,10 +9,11 @@ from . import card_info
 class Target(abc.ABC):
     SUPPORTED_OS = ["posix", "nt"]
 
-    def __init__(self, name, short, file_extension):
+    def __init__(self, name, short, file_extension, needs_card_info=True):
         self.name = name
         self.short = short
         self.file_extension = file_extension
+        self.needs_card_info = needs_card_info
 
     def suggest_directory(self):
         if os.name == "nt":

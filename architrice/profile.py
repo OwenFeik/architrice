@@ -23,7 +23,8 @@ class ProfileDir:
 
     def save_deck(self, deck):
         self.target.save_deck(
-            os.path.join(self.dir.path, self.update_deck_file(deck).file_name)
+            deck,
+            os.path.join(self.dir.path, self.update_deck_file(deck).file_name),
         )
 
     def save_decks(self, decks):
@@ -130,7 +131,8 @@ class Profile:
             if filter_targets and profile_dir.target != filter_targets:
                 continue
             if filter_dirs and not os.path.samefile(
-                filter_dirs, profile_dir.dir.path
+                getattr(filter_dirs, "path", None) or filter_dirs,
+                profile_dir.dir.path,
             ):
                 continue
             if not utils.check_dir(profile_dir.dir.path):

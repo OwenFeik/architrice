@@ -7,7 +7,7 @@ import requests
 from .. import database
 from .. import utils
 
-SCRYFALL_BULK_DATA_URL = "https://api.scryfall.com/bulk-data/oracle-cards"
+SCRYFALL_BULK_DATA_URL = "https://api.scryfall.com/bulk-data/all-cards"
 # Scryfall updates its card list every 24 hours.
 # We will update no more frequently than this as it is a large download.
 CARD_LIST_UPDATE_INTERVAL = 60 * 60 * 24
@@ -22,18 +22,38 @@ class CardInfo:
     edition: str
 
 
-# TODO PROBLEM: every thread will try to do this.
-# need to figure out a way to do it once if needed either before hand
-# or with other threads waiting on it.
+# Note: this should only be called from one thread at a time.
 @functools.cache  # cache to save repeated db queries
 def update_card_list():
+    time, url = (
+        database.select_one(
+            "database_events",
+            ["time", "data"],
+            id=database.DatabaseEvents.CARD_LIST_UPDATE.value,
+        )
+        or (0, None)
+    )
+    if utils.time_now() - time < CARD_LIST_UPDATE_INTERVAL:
+        return
+
     download_info = requests.get(SCRYFALL_BULK_DATA_URL).json()
+
+    database.upsert(
+        "database_events",
+        id=database.DatabaseEvents.CARD_LIST_UPDATE.value,
+        time=utils.time_now(),
+        data=download_info["download_uri"],
+    )
+
+    if download_info["download_uri"] == url:
+        logging.info("Latest Scryfall card list already downloaded.")
+        return
+
     logging.info(
-        "Downloading Scryfall card list for MTGO ids. Download size: "
+        "Downloading Scryfall card list for card data. Download size: "
         + str(download_info["compressed_size"])
         + " bytes."
     )
-
     # ~12MB download, ~90MB uncompressed
     data = requests.get(download_info["download_uri"]).json()
 
@@ -61,11 +81,12 @@ def update_card_list():
         if card["name"] in names:
             continue
 
-        names.append(card["name"])
-        mtgo_ids.append(card.get("mtgo_id"))
-        is_dfcs.append("card_faces" in card)
-        collector_numbers.append(card["collector_number"])
-        sets.append(card["set"])
+        if "mtgo_id" in card:
+            names.append(card["name"])
+            mtgo_ids.append(card["mtgo_id"])
+            is_dfcs.append("card_faces" in card)
+            collector_numbers.append(card["collector_number"])
+            sets.append(card["set"])
 
     database.insert_many(
         "cards",
@@ -75,33 +96,19 @@ def update_card_list():
         collector_number=collector_numbers,
         edition=sets,
     )
-    database.upsert(
-        "database_events",
-        id=database.DatabaseEvents.CARD_LIST_UPDATE.value,
-        time=utils.time_now(),
-    )
+    database.commit()
 
     logging.info("Card database update complete.")
 
 
-def find(name):
+def find(name, update_if_necessary=True):
     if tup := database.select_one("cards", name=name):
         _, name, mtgo_id, is_dfc, collector_number, edition = tup
-        return CardInfo(name, mtgo_id, is_dfc, collector_number, edition)
-    elif (
-        utils.time_now()
-        - (
-            database.select_one_column(
-                "database_events",
-                "last_time",
-                id=database.DatabaseEvents.CARD_LIST_UPDATE.value,
-            )
-            or 0
-        )
-    ) >= CARD_LIST_UPDATE_INTERVAL:
+        return CardInfo(name, str(mtgo_id), is_dfc, collector_number, edition)
+    elif update_if_necessary:
         logging.info(f"Missing card info for {name}. Updating database.")
         update_card_list()
-        return find(name)
+        return find(name, False)
     else:
         logging.error(f"Unable to find card info for {name}.")
         return None
@@ -109,7 +116,10 @@ def find(name):
 
 def find_many(names):
     """Returns a {name: CardInfo} map with all cards in names."""
-    return {name: find(name) for name in names}
+    database.disable_logging()
+    card_info_map = {name: find(name) for name in names}
+    database.enable_logging()
+    return card_info_map
 
 
 def map_from_deck(deck):

@@ -1,7 +1,5 @@
-import logging
 import os
 import xml.etree.cElementTree as et
-import time
 
 from .. import utils
 
@@ -59,21 +57,29 @@ def mtgo_name(card):
 
 
 def add_card(root, card, card_info_map, in_sideboard=False):
-    mtgo_id = card_info_map.get(card.name).mtgo_id
-    if mtgo_id:
+    info = card_info_map.get(card.name)
+    if info and info.mtgo_id:
         et.SubElement(
             root,
             "Cards",
-            CatID=mtgo_id,
-            Quantity=str(card.quantity),
-            Sideboard="true" if in_sideboard else "false",
-            Name=mtgo_name(card),
-            Annotation="0",
+            {
+                "CatId": info.mtgo_id,
+                "Quantity": str(card.quantity),
+                "Sideboard": "true" if in_sideboard else "false",
+                "Name": mtgo_name(card),
+                "Annotation": "0",
+            },
         )
 
 
 def deck_to_xml(deck, outfile, card_info_map):
-    root = et.Element("Deck")
+    root = et.Element(
+        "Deck",
+        {
+            "xmlns:xsd": "http://www.w3.org/2001/XMLSchema",
+            "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+        },
+    )  # xmlns declaration that MTGO writes in its .dek files.
 
     et.SubElement(root, "NetDeckID").text = "0"
     et.SubElement(root, "PreconstructedDeckID").text = "0"

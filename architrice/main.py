@@ -353,21 +353,11 @@ def main():
             set_up_shortcuts()
     elif args.add:
         add_profile(
-            cache,
-            args.interactive,
-            source,
-            target,
-            args.user,
-            path,
+            cache, args.interactive, source, target, args.user, path, args.name
         )
 
     if args.delete:
-        delete_profile(
-            cache,
-            args.interactive,
-            source,
-            args.user,
-        )
+        delete_profile(cache, args.interactive, source, args.user, args.name)
 
     if not args.skip_update:
         update_decks(cache, args.latest, source, target, args.user, path)

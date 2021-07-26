@@ -22,7 +22,10 @@ class Cockatrice(target.Target):
 
     def __init__(self):
         super().__init__(
-            Cockatrice.NAME, Cockatrice.SHORT, Cockatrice.DECK_FILE_EXTENSION
+            Cockatrice.NAME,
+            Cockatrice.SHORT,
+            Cockatrice.DECK_FILE_EXTENSION,
+            False,
         )
 
     def suggest_directory(self):

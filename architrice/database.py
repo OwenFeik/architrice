@@ -21,7 +21,7 @@ class Database:
 
     def init(self, initial_setup=False):
         """Connect to and set up the database for user."""
-        self.conn = sqlite3.connect(self.file, check_same_thread=False)
+        self.conn = sqlite3.connect(self.file)
         self.cursor = self.conn.cursor()
 
         logging.debug("Connected to database.")
@@ -172,6 +172,20 @@ class Table:
         if db and create:
             self.create()
 
+    def primary_key(self):
+        for c in self.columns:
+            if c.primary_key:
+                return c
+
+    def conflict_condition(self):
+        # Prioritises UNIQUE restrictions, followed by primary key
+
+        for c in self.constraints:
+            if "UNIQUE" in c:
+                return c.replace("UNIQUE(", "").replace(")", "")
+
+        return self.primary_key().name
+
     def create(self):
         self.db.execute(
             f"CREATE TABLE IF NOT EXISTS {self.name} ("
@@ -187,20 +201,16 @@ class Table:
                 )
 
     def insert_command(self, column_names, update=False):
+        column_name_string = ", ".join(column_names)
+        substitution_string = ("?, " * len(column_names))[:-2]
         return (
             "INSERT "
-            + f"INTO {self.name} ("
-            + ", ".join(column_names)
-            + ") VALUES ("
-            + ("?, " * len(column_names))[:-2]
-            + ")"
+            + f"INTO {self.name} ({column_name_string}) VALUES "
+            + f"({substitution_string})"
             + (
                 (
-                    " ON CONFLICT DO UPDATE SET ("
-                    + ", ".join(column_names)
-                    + ") = ("
-                    + ("?, " * len(column_names))[:-2]
-                    + ")"
+                    f" ON CONFLICT({self.conflict_condition()}) DO UPDATE SET "
+                    f"({column_name_string}) = ({substitution_string})"
                 )
                 if update
                 else ""
@@ -349,6 +359,7 @@ database = Database(
             [
                 Column("id", "INTEGER", primary_key=True),
                 Column("time", "INTEGER", not_null=True),
+                Column("data", "TEXT"),
             ],
         ),
     ],
