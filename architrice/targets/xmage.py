@@ -1,15 +1,16 @@
-import logging
-
 from . import card_info
 from . import target
 
 
 class XMage(target.Target):
+    NAME = "XMage"
+    SHORT = NAME[0]
+    FILE_EXTENSION = ".dck"
     MAIN_DECK_FORMAT = "{} [{}:{}] {}\n"
     SIDEBOARD_FORMAT = f"SB: {MAIN_DECK_FORMAT}"
 
     def __init__(self):
-        super("XMage", "X", ".dck")
+        super().__init__(XMage.NAME, XMage.SHORT, XMage.FILE_EXTENSION)
 
     def xmage_name(self, card):
         return card.name.partition("//")[0]
@@ -26,8 +27,13 @@ class XMage(target.Target):
                 continue
 
             card_list_string += format_string.format(
-                card.quantity, info.edition, info.collector_number, card.name
+                card.quantity,
+                info.edition.upper(),
+                info.collector_number,
+                card.name,
             )
+
+        return card_list_string
 
     def save_deck(self, deck, path, card_info_map=None):
         # XMage decks have the following format:
@@ -43,7 +49,9 @@ class XMage(target.Target):
         #   so Architrice omits them.
 
         if card_info_map is None:
-            card_info_map = card_info.map_from_deck(deck)
+            card_info_map = card_info.map_from_deck(
+                deck, mtgo_id_required=False
+            )
 
         deck_string = self.format_card_list(
             card_info_map, deck.get_main_deck()

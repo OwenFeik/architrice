@@ -9,6 +9,8 @@ from . import targets
 from . import utils
 
 
+# TODO: This ignores targets. Need to mirror the database structure where
+# deckfiles reference decks.
 @dataclasses.dataclass
 class DeckFile:
     deck_id: str
@@ -56,9 +58,13 @@ class DirCache:
                 )
 
     def needs_update(self, update):
-        return (
-            update
-            and not self.tracking(update)
+        return update and (
+            not self.tracking(update)
+            or not os.path.exists(
+                os.path.join(
+                    self.path, self.tracked[self.tracked_key(update)].file_name
+                )
+            )
             or update.updated > self.tracked[self.tracked_key(update)].updated
         )
 
@@ -216,6 +222,9 @@ class Cache:
         return Cache(profiles, dir_caches)
 
     def save(self):
+        logging.debug("Saving cache.")
+        database.disable_logging()
+
         dir_caches = []
         for profile in self.profiles:
             if profile.id is None:
@@ -261,5 +270,7 @@ class Cache:
                     updated=deck_file.updated,
                 )
 
+        database.enable_logging()
         database.commit()
+        logging.debug("Successfully saved cache, closing database connection.")
         database.close()

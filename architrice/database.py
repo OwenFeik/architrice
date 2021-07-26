@@ -48,7 +48,7 @@ class Database:
 
     def upsert(self, table, **kwargs):
         """Execute an INSERT into table, updating on conflict."""
-        kwargs["update"] = True
+        kwargs["conflict"] = "update"
         self.tables[table].insert(**kwargs)
         return self.cursor.lastrowid
 
@@ -56,9 +56,15 @@ class Database:
         """Execute many INSERTs into table, using kwarg keys and value lists."""
         self.tables[table].insert_many(**kwargs)
 
+    def insert_many_tuples(self, table, columns, tuples, conflict=None):
+        """Execute many INSERT INTO INTO table (columns) VALUES(tuples)"""
+        self.execute_many(
+            self.tables[table].insert_command(columns, conflict), tuples
+        )
+
     def upsert_many(self, table, **kwargs):
         """Execute many upserts into table."""
-        kwargs["update"] = True
+        kwargs["conflict"] = "update"
         self.tables[table].insert_many(**kwargs)
 
     def select(self, table, columns="*", **kwargs):
@@ -139,7 +145,7 @@ class Database:
 
 @dataclasses.dataclass
 class Column:
-    name: str  # note: update and columns are reserved names
+    name: str  # note: conflict and columns are reserved names
     datatype: str
     primary_key: bool = False
     references: str = None  # Foreign key to this table. Cascade delete.
@@ -200,11 +206,12 @@ class Table:
                     f"ON {self.name} ({c.name});"
                 )
 
-    def insert_command(self, column_names, update=False):
+    def insert_command(self, column_names, conflict=None):
         column_name_string = ", ".join(column_names)
         substitution_string = ("?, " * len(column_names))[:-2]
         return (
             "INSERT "
+            + ("OR IGNORE " if conflict == "ignore" else "")
             + f"INTO {self.name} ({column_name_string}) VALUES "
             + f"({substitution_string})"
             + (
@@ -212,7 +219,7 @@ class Table:
                     f" ON CONFLICT({self.conflict_condition()}) DO UPDATE SET "
                     f"({column_name_string}) = ({substitution_string})"
                 )
-                if update
+                if conflict == "update"
                 else ""
             )
             + ";"
@@ -224,14 +231,14 @@ class Table:
     def create_insert_args(self, **kwargs):
         column_names = self.column_names(**kwargs)
         arguments = [kwargs[name] for name in column_names]
-        if kwargs.get("update"):
+        if kwargs.get("conflict") == "update":
             arguments *= 2
         return (column_names, arguments)
 
     def insert(self, **kwargs):
         column_names, arguments = self.create_insert_args(**kwargs)
         self.db.execute(
-            self.insert_command(column_names, kwargs.get("update")),
+            self.insert_command(column_names, kwargs.get("conflict")),
             arguments,
         )
 
@@ -239,24 +246,45 @@ class Table:
         column_names, arguments = self.create_insert_args(**kwargs)
         arguments = zip(*arguments)
         self.db.execute_many(
-            self.insert_command(column_names, kwargs.get("update")),
+            self.insert_command(column_names, kwargs.get("conflict")),
             arguments,
         )
 
-    def where_string(self, column_names):
-        return (
-            (" WHERE " + " AND ".join([f"{name} = ?" for name in column_names]))
+    def is_null_check(self, arg):
+        if isinstance(arg, str) and "NULL" in arg:
+            return True
+        return False
+
+    def equality_string(self, name, arg):
+        if self.is_null_check(arg):
+            return f"{name} IS {arg}"
+        return f"{name} = ?"
+
+    def create_where_string(self, column_names, arguments):
+        where_string = (
+            (
+                " WHERE "
+                + " AND ".join(
+                    [
+                        self.equality_string(name, arg)
+                        for name, arg in zip(column_names, arguments)
+                    ]
+                )
+            )
             if column_names
             else ""
         )
+        arguments = [arg for arg in arguments if not self.is_null_check(arg)]
+        return where_string, arguments
+
+    def common_where_handling(self, **kwargs):
+        return self.create_where_string(*self.create_insert_args(**kwargs))
 
     def select(self, column_string, **kwargs):
-        column_names = self.column_names(**kwargs)
+        where_string, arguments = self.common_where_handling(**kwargs)
         return self.db.execute(
-            f"SELECT {column_string} FROM {self.name}"
-            + self.where_string(column_names)
-            + ";",
-            [kwargs[name] for name in column_names],
+            f"SELECT {column_string} FROM {self.name}{where_string};",
+            arguments,
         )
 
     def select_where_in(self, field, values, column_string):
@@ -268,10 +296,10 @@ class Table:
         )
 
     def delete(self, **kwargs):
-        column_names = self.column_names(**kwargs)
+        where_string, arguments = self.common_where_handling(**kwargs)
         self.db.execute(
-            f"DELETE FROM {self.name}" + self.where_string(column_names) + ";",
-            [kwargs[name] for name in column_names],
+            f"DELETE FROM {self.name}{where_string};",
+            arguments,
         )
 
 
@@ -327,11 +355,12 @@ database = Database(
             "cards",
             [
                 Column("id", "INTEGER", primary_key=True),
-                Column("name", "TEXT", unique=True, index_on=True),
+                Column("name", "TEXT", index_on=True),
                 Column("mtgo_id", "INTEGER", unique=True),
                 Column("is_dfc", "INTEGER", not_null=True),
                 Column("collector_number", "TEXT", not_null=True),
                 Column("edition", "TEXT", not_null=True),
+                Column("reprint", "INTEGER", not_null=True),
             ],
         ),
         Table(
@@ -367,6 +396,7 @@ database = Database(
 
 insert = database.insert
 insert_many = database.insert_many
+insert_many_tuples = database.insert_many_tuples
 upsert = database.upsert
 upsert_many = database.upsert_many
 select = database.select
@@ -399,3 +429,5 @@ def init():
 
         for target in targets.targetlist:
             insert("targets", short=target.SHORT, name=target.NAME)
+
+        commit()

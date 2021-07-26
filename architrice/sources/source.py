@@ -94,7 +94,7 @@ class Deck:
         self.commanders = kwargs.get("commanders", [])
 
     def get_all_cards(self):
-        return self.main + self.side + self.maybe
+        return self.main + self.side + self.maybe + self.commanders
 
     def get_main_deck(self, include_commanders=False):
         if include_commanders:

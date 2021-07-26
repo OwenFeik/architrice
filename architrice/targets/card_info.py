@@ -7,7 +7,7 @@ import requests
 from .. import database
 from .. import utils
 
-SCRYFALL_BULK_DATA_URL = "https://api.scryfall.com/bulk-data/all-cards"
+SCRYFALL_BULK_DATA_URL = "https://api.scryfall.com/bulk-data/default-cards"
 # Scryfall updates its card list every 24 hours.
 # We will update no more frequently than this as it is a large download.
 CARD_LIST_UPDATE_INTERVAL = 60 * 60 * 24
@@ -21,9 +21,16 @@ class CardInfo:
     collector_number: str
     edition: str
 
+    @staticmethod
+    def from_record(tup):
+        # first underscore is db id, second is reprint flag
+        _, name, mtgo_id, is_dfc, collector_number, edition, _ = tup
+        return CardInfo(
+            name, mtgo_id and str(mtgo_id), is_dfc, collector_number, edition
+        )
+
 
 # Note: this should only be called from one thread at a time.
-@functools.cache  # cache to save repeated db queries
 def update_card_list():
     time, url = (
         database.select_one(
@@ -54,7 +61,7 @@ def update_card_list():
         + str(download_info["compressed_size"])
         + " bytes."
     )
-    # ~12MB download, ~90MB uncompressed
+    # ~30MB download, ~230MB uncompressed
     data = requests.get(download_info["download_uri"]).json()
 
     disallowed_layouts = [
@@ -67,71 +74,97 @@ def update_card_list():
         "vanguard",
     ]
 
+    # Tuple format:
+    # (name, mtgo_id, is_dfc, collector_number, edition, reprint)
+
+    records = []
+
     # Relatively slow way to do it but as it only needs to happen rarely and
     # is paired with a download anyway it isn't really worth optimising.
-    names = []
-    mtgo_ids = []
-    is_dfcs = []
-    collector_numbers = []
-    sets = []
     for card in data:
         if card["layout"] in disallowed_layouts:
             continue
 
-        if card["name"] in names:
-            continue
+        records.append(
+            (
+                card["name"],
+                card.get("mtgo_id"),
+                "card_faces" in card,
+                card["collector_number"],
+                card["set"],
+                card["reprint"],
+            )
+        )
 
-        if "mtgo_id" in card:
-            names.append(card["name"])
-            mtgo_ids.append(card["mtgo_id"])
-            is_dfcs.append("card_faces" in card)
-            collector_numbers.append(card["collector_number"])
-            sets.append(card["set"])
-
-    database.insert_many(
+    database.insert_many_tuples(
         "cards",
-        name=names,
-        mtgo_id=mtgo_ids,
-        is_dfc=is_dfcs,
-        collector_number=collector_numbers,
-        edition=sets,
+        [
+            "name",
+            "mtgo_id",
+            "is_dfc",
+            "collector_number",
+            "edition",
+            "reprint",
+        ],
+        records,
+        conflict="ignore",
     )
     database.commit()
 
     logging.info("Card database update complete.")
 
 
-def find(name, update_if_necessary=True):
-    if tup := database.select_one("cards", name=name):
-        _, name, mtgo_id, is_dfc, collector_number, edition = tup
-        return CardInfo(name, str(mtgo_id), is_dfc, collector_number, edition)
-    elif update_if_necessary:
-        logging.info(f"Missing card info for {name}. Updating database.")
+@functools.cache  # cache to save repeated db queries
+def find(name, mtgo_id_required=False, update_if_necessary=True):
+    matches = list(database.select("cards", name=name))
+
+    # Try and get original printing
+    for tup in matches:
+        _, _, mtgo_id, *_, reprint = tup
+
+        if not reprint and (mtgo_id or not mtgo_id_required):
+            return CardInfo.from_record(tup)
+
+    # Settle for any printing
+    for tup in matches:
+        _, _, mtgo_id, *_, reprint = tup
+
+        if mtgo_id or not mtgo_id_required:
+            return CardInfo.from_record(tup)
+
+    if update_if_necessary:
+        logging.debug(f"Missing card info for {name}. Updating database.")
         update_card_list()
-        return find(name, False)
+        return find(
+            name, mtgo_id_required=mtgo_id_required, update_if_necessary=False
+        )
     else:
-        logging.error(f"Unable to find card info for {name}.")
+        logging.debug(f"Unable to find suitable card info for {name}.")
         return None
 
 
-def find_many(names):
+def find_many(names, mtgo_id_required=False):
     """Returns a {name: CardInfo} map with all cards in names."""
     database.disable_logging()
-    card_info_map = {name: find(name) for name in names}
+    card_info_map = {
+        name: find(name, mtgo_id_required=mtgo_id_required) for name in names
+    }
     database.enable_logging()
     return card_info_map
 
 
-def map_from_deck(deck):
+def map_from_deck(deck, mtgo_id_required=False):
     """Returns a card info map from a sources.Deck."""
-    return find_many([card.name for card in deck.get_all_cards()])
+    return find_many(
+        [card.name for card in deck.get_all_cards()], mtgo_id_required
+    )
 
 
-def map_from_decks(decks):
+def map_from_decks(decks, mtgo_id_required=False):
     """Return a card info map with all cards that appear in decks."""
     card_names = set()
     for deck in decks:
         for card in deck.get_all_cards():
             card_names.add(card.name)
 
-    return find_many(card_names)
+    return find_many(card_names, mtgo_id_required)

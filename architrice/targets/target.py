@@ -14,6 +14,7 @@ class Target(abc.ABC):
         self.short = short
         self.file_extension = file_extension
         self.needs_card_info = needs_card_info
+        self.mtgo_id_required = False
 
     def suggest_directory(self):
         if os.name == "nt":
@@ -29,10 +30,10 @@ class Target(abc.ABC):
     def save_decks(self, deck_tuples, card_info_map=None):
         if card_info_map is None:
             card_info_map = card_info.map_from_decks(
-                [d for d, _ in deck_tuples]
+                [d for d, _ in deck_tuples],
+                mtgo_id_required=self.mtgo_id_required,
             )
 
-        # TODO test this, if slow can use a ThreadPoolExecutor
         for deck, path in deck_tuples:
             self.save_deck(deck, path, card_info_map)
 

@@ -1,3 +1,4 @@
+import logging
 import os
 import xml.etree.cElementTree as et
 
@@ -39,6 +40,7 @@ class Mtgo(target.Target):
 
     def __init__(self):
         super().__init__(Mtgo.NAME, Mtgo.SHORT, Mtgo.DECK_FILE_EXTENSION)
+        self.mtgo_id_required = True
 
     def suggest_directory(self):
         for directory in Mtgo.DECK_DIRECTORYS:
@@ -48,7 +50,7 @@ class Mtgo(target.Target):
 
     def save_deck(self, deck, path, card_info_map=None):
         if card_info_map is None:
-            card_info_map = card_info.map_from_deck(deck)
+            card_info_map = card_info.map_from_deck(deck, mtgo_id_required=True)
         return deck_to_xml(deck, path, card_info_map)
 
 
@@ -63,12 +65,17 @@ def add_card(root, card, card_info_map, in_sideboard=False):
             root,
             "Cards",
             {
-                "CatId": info.mtgo_id,
+                "CatID": info.mtgo_id,
                 "Quantity": str(card.quantity),
                 "Sideboard": "true" if in_sideboard else "false",
                 "Name": mtgo_name(card),
                 "Annotation": "0",
             },
+        )
+    else:
+        logging.info(
+            f"Couldn't find MTGO data for {card.name}."
+            " It may not exist on MTGO."
         )
 
 
