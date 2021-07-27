@@ -55,7 +55,8 @@ def update_card_list():
     if download_info["download_uri"] == url:
         logging.info("Latest Scryfall card list already downloaded.")
         return
-
+        
+    logging.info("This may take a couple of minutes.")
     logging.info(
         "Downloading Scryfall card list for card data. Download size: "
         + str(download_info["compressed_size"])

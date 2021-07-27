@@ -13,7 +13,7 @@ class XMage(target.Target):
         super().__init__(XMage.NAME, XMage.SHORT, XMage.FILE_EXTENSION)
 
     def xmage_name(self, card):
-        return card.name.partition("//")[0]
+        return card.name.partition("//")[0].strip()
 
     def format_card_list(self, card_info_map, card_list, sideboard=False):
         format_string = (
@@ -30,7 +30,7 @@ class XMage(target.Target):
                 card.quantity,
                 info.edition.upper(),
                 info.collector_number,
-                card.name,
+                self.xmage_name(card),
             )
 
         return card_list_string
