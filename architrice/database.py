@@ -44,13 +44,13 @@ class Database:
     def insert(self, table, **kwargs):
         """Execute an INSERT into table using kwarg keys and values."""
         self.tables[table].insert(**kwargs)
+        print(f"Returning id: {self.cursor.lastrowid}.")
         return self.cursor.lastrowid
 
     def upsert(self, table, **kwargs):
         """Execute an INSERT into table, updating on conflict."""
         kwargs["conflict"] = "update"
-        self.tables[table].insert(**kwargs)
-        return self.cursor.lastrowid
+        return self.insert(table, **kwargs)
 
     def insert_many(self, table, **kwargs):
         """Execute many INSERTs into table, using kwarg keys and value lists."""
@@ -206,6 +206,7 @@ class Table:
                     f"ON {self.name} ({c.name});"
                 )
 
+    # TODO ; don't update id on conflict
     def insert_command(self, column_names, conflict=None):
         column_name_string = ", ".join(column_names)
         substitution_string = ("?, " * len(column_names))[:-2]
@@ -303,6 +304,54 @@ class Table:
         )
 
 
+class KeyStoredObject:
+    # Singletons like Sources or Targets which are referred in the database
+    # by keys.
+
+    def __init__(self, key):
+        self.key = key
+
+
+class StoredObject:
+    # Objects which are stored in the database may subclass from this class.
+    # If they do, they should have attributes for each of the relevant fields
+    # in the database. id is provided by default and so only tables with an
+    # id column are applicable.
+
+    def __init__(self, table, db_id=None):
+        self.table = table
+        self._id = db_id
+
+    @property
+    def id(self):
+        """Database ID of the StoreObject. Will store() to get one if needed."""
+
+        if not self._id:
+            self.store()
+        return self._id
+
+    def store(self):
+        """Store this object in the database."""
+
+        kwargs = {}
+        print(self.table, database.tables[self.table].columns)
+        for column in database.tables[self.table].columns:
+            print(column)
+            if column.name == "id":
+                print(f"Obj id check:", id(self), repr(self))
+                value = self._id
+            else:
+                value = getattr(self, column.name, None)
+            if isinstance(value, StoredObject):
+                value = value.id
+            elif isinstance(value, KeyStoredObject):
+                value = value.key
+            kwargs[column.name] = value
+        print(f"Obj before:", id(self), repr(self))
+        self._id = upsert(self.table, **kwargs)
+        print(f"Obj after:", id(self), repr(self))
+
+
 class DatabaseEvents(enum.Enum):
     CARD_LIST_UPDATE = 1
 
@@ -325,18 +374,23 @@ database = Database(
             ],
         ),
         Table(
-            "dirs",
+            "output_dirs",
             [
                 Column("id", "INTEGER", primary_key=True),
                 Column("path", "TEXT", not_null=True, unique=True),
             ],
         ),
         Table(
-            "profile_dirs",
+            "outputs",
             [
                 Column("id", "INTEGER", primary_key=True),
                 Column("target", "TEXT", references="targets", not_null=True),
-                Column("dir", "INTEGER", references="dirs", not_null=True),
+                Column(
+                    "output_dir",
+                    "INTEGER",
+                    references="output_dirs",
+                    not_null=True,
+                ),
                 Column(
                     "profile", "INTEGER", references="profiles", not_null=True
                 ),
@@ -378,10 +432,15 @@ database = Database(
                 Column("id", "INTEGER", primary_key=True),
                 Column("deck", "INTEGER", references="decks", not_null=True),
                 Column("file_name", "TEXT", not_null=True),
-                Column("dir", "INTEGER", references="dirs", not_null=True),
+                Column(
+                    "output",
+                    "INTEGER",
+                    references="outputs",
+                    not_null=True,
+                ),
                 Column("updated", "INTEGER"),
             ],
-            ["UNIQUE(file_name, dir)"],
+            ["UNIQUE(file_name, output)"],
         ),
         Table(
             "database_events",

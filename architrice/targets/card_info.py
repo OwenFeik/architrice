@@ -4,6 +4,7 @@ import logging
 
 import requests
 
+from .. import caching
 from .. import database
 from .. import utils
 
@@ -11,23 +12,6 @@ SCRYFALL_BULK_DATA_URL = "https://api.scryfall.com/bulk-data/default-cards"
 # Scryfall updates its card list every 24 hours.
 # We will update no more frequently than this as it is a large download.
 CARD_LIST_UPDATE_INTERVAL = 60 * 60 * 24
-
-
-@dataclasses.dataclass
-class CardInfo:
-    name: str
-    mtgo_id: int
-    is_dfc: bool
-    collector_number: str
-    edition: str
-
-    @staticmethod
-    def from_record(tup):
-        # first underscore is db id, second is reprint flag
-        _, name, mtgo_id, is_dfc, collector_number, edition, _ = tup
-        return CardInfo(
-            name, mtgo_id and str(mtgo_id), is_dfc, collector_number, edition
-        )
 
 
 # Note: this should only be called from one thread at a time.
@@ -55,7 +39,7 @@ def update_card_list():
     if download_info["download_uri"] == url:
         logging.info("Latest Scryfall card list already downloaded.")
         return
-        
+
     logging.info("This may take a couple of minutes.")
     logging.info(
         "Downloading Scryfall card list for card data. Download size: "
@@ -124,14 +108,14 @@ def find(name, mtgo_id_required=False, update_if_necessary=True):
         _, _, mtgo_id, *_, reprint = tup
 
         if not reprint and (mtgo_id or not mtgo_id_required):
-            return CardInfo.from_record(tup)
+            return caching.Card.from_record(tup)
 
     # Settle for any printing
     for tup in matches:
-        _, _, mtgo_id, *_, reprint = tup
+        _, _, mtgo_id, *_ = tup
 
         if mtgo_id or not mtgo_id_required:
-            return CardInfo.from_record(tup)
+            return caching.Card.from_record(tup)
 
     if update_if_necessary:
         logging.debug(f"Missing card info for {name}. Updating database.")
@@ -156,16 +140,13 @@ def find_many(names, mtgo_id_required=False):
 
 def map_from_deck(deck, mtgo_id_required=False):
     """Returns a card info map from a sources.Deck."""
-    return find_many(
-        [card.name for card in deck.get_all_cards()], mtgo_id_required
-    )
+    return find_many(deck.get_all_card_names(), mtgo_id_required)
 
 
 def map_from_decks(decks, mtgo_id_required=False):
     """Return a card info map with all cards that appear in decks."""
     card_names = set()
     for deck in decks:
-        for card in deck.get_all_cards():
-            card_names.add(card.name)
+        card_names.update(deck.get_all_card_names())
 
     return find_many(card_names, mtgo_id_required)

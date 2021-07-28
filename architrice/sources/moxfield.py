@@ -1,5 +1,6 @@
 import requests
 
+from .. import caching
 from .. import utils
 
 from . import source
@@ -15,17 +16,13 @@ class Moxfield(source.Source):
     def __init__(self):
         super().__init__(Moxfield.NAME, Moxfield.SHORT)
 
-    def is_dfc(self, layout):
-        return layout in ["transform", "modal_dfc"]
-
     def parse_to_cards(self, board):
         cards = []
         for k in board:
             cards.append(
-                source.DeckCard(
+                (
                     board[k]["quantity"],
                     k,
-                    self.is_dfc(board[k]["card"]["layout"]),
                 )
             )
 
@@ -49,9 +46,11 @@ class Moxfield(source.Source):
         ret = []
         for deck in decks:
             ret.append(
-                source.DeckUpdate(
-                    deck["publicId"],
-                    self.short,
+                caching.DeckUpdate(
+                    caching.DeckDetails(
+                        deck["publicId"],
+                        self.short,
+                    ),
                     utils.parse_iso_8601(deck["lastUpdatedAtUtc"]),
                 )
             )

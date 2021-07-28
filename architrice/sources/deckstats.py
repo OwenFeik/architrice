@@ -3,6 +3,7 @@ import re
 import bs4
 import requests
 
+from .. import caching
 from .. import utils
 
 from . import source
@@ -20,9 +21,7 @@ class Deckstats(source.Source):
         return deck_id + f"?owner_id={owner_id}"
 
     def card_json_to_card(self, card):
-        return source.DeckCard(
-            card["amount"], card["name"], "//" in card["name"]
-        )
+        return (card["amount"], card["name"])
 
     def deck_to_generic_format(self, deck_id, deck):
         d = self.create_deck(deck_id, deck["name"], "")
@@ -91,9 +90,11 @@ class Deckstats(source.Source):
             if folder := data.get("folder"):
                 for deck in folder.get("decks", []):
                     decks.append(
-                        source.DeckUpdate(
-                            self.format_deck_id(deck["saved_id"], user_id),
-                            self.short,
+                        caching.DeckUpdate(
+                            caching.DeckDetails(
+                                self.format_deck_id(deck["saved_id"], user_id),
+                                self.short,
+                            ),
                             utils.timestamp_to_utc(deck["updated"]),
                         )
                     )

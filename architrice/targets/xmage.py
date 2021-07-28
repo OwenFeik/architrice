@@ -12,8 +12,8 @@ class XMage(target.Target):
     def __init__(self):
         super().__init__(XMage.NAME, XMage.SHORT, XMage.FILE_EXTENSION)
 
-    def xmage_name(self, card):
-        return card.name.partition("//")[0].strip()
+    def xmage_name(self, name):
+        return name.partition("//")[0].strip()
 
     def format_card_list(self, card_info_map, card_list, sideboard=False):
         format_string = (
@@ -21,16 +21,16 @@ class XMage(target.Target):
         )
 
         card_list_string = ""
-        for card in card_list:
-            info = card_info_map.get(card.name)
+        for quantity, name in card_list:
+            info = card_info_map.get(name)
             if info is None:  # Skip cards we don't have data for
                 continue
 
             card_list_string += format_string.format(
-                card.quantity,
+                quantity,
                 info.edition.upper(),
                 info.collector_number,
-                self.xmage_name(card),
+                self.xmage_name(name),
             )
 
         return card_list_string

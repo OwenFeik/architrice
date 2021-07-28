@@ -1,5 +1,6 @@
 import requests
 
+from .. import caching
 from .. import utils
 
 from . import source
@@ -17,11 +18,7 @@ class Archidekt(source.Source):
         d = self.create_deck(deck_id, deck["name"], deck["description"])
 
         for card in deck["cards"]:
-            c = source.DeckCard(
-                card["quantity"],
-                card["card"]["oracleCard"]["name"],
-                "dfc" in card["card"]["oracleCard"]["layout"],
-            )
+            c = (card["quantity"], card["card"]["oracleCard"]["name"])
 
             if "Commander" in card["categories"]:
                 d.commanders.append(c)
@@ -47,9 +44,8 @@ class Archidekt(source.Source):
         ret = []
         for deck in decks:
             ret.append(
-                source.DeckUpdate(
-                    str(deck["id"]),
-                    self.short,
+                caching.DeckUpdate(
+                    caching.DeckDetails(str(deck["id"]), self.short),
                     utils.parse_iso_8601(deck["updatedAt"]),
                 )
             )

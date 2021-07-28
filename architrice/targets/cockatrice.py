@@ -39,13 +39,8 @@ class Cockatrice(target.Target):
             self.save_deck(deck, path)
 
 
-def cockatrice_name(card):
-    # Cockatrice implements dfcs as a seperate card each for the front and
-    # back face. By adding just the front face, the right card will be in the
-    # deck.
-    if card.is_dfc:
-        return card.name.split("//")[0].strip()
-    return card.name
+def cockatrice_name(name):
+    return name.partition("//")[0].strip()
 
 
 def deck_to_xml(deck, outfile):
@@ -57,16 +52,13 @@ def deck_to_xml(deck, outfile):
     main = et.SubElement(root, "zone", name="main")
     side = et.SubElement(root, "zone", name="side")
 
-    for card in deck.get_main_deck():
+    for quantity, name in deck.get_main_deck():
         et.SubElement(
-            main,
-            "card",
-            number=str(card.quantity),
-            name=cockatrice_name(card),
+            main, "card", number=str(quantity), name=cockatrice_name(name)
         )
-    for card in deck.get_sideboard():
+    for quantity, name in deck.get_sideboard():
         et.SubElement(
-            side, "card", number=str(card.quantity), name=cockatrice_name(card)
+            side, "card", number=str(quantity), name=cockatrice_name(name)
         )
 
     et.ElementTree(root).write(outfile, xml_declaration=True, encoding="UTF-8")

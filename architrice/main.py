@@ -142,7 +142,7 @@ def get_output_path(cache, interactive, target, path):
     return path
 
 
-def add_profile_dir(cache, interactive, profile, target=None, path=None):
+def add_output(cache, interactive, profile, target=None, path=None):
     if profile is None:
         return
 
@@ -150,7 +150,7 @@ def add_profile_dir(cache, interactive, profile, target=None, path=None):
         logging.error("No target specified. Unable to add profile.")
         return
 
-    cache.build_profile_dir(
+    cache.build_output(
         profile, target, get_output_path(cache, interactive, target, path)
     )
 
@@ -175,7 +175,7 @@ def add_profile(
     if name is None and interactive and cli.get_decision("Name this profile?"):
         name = cli.get_string("Profile name")
 
-    add_profile_dir(
+    add_output(
         cache,
         interactive,
         cache.build_profile(source, user, name),
@@ -210,23 +210,7 @@ def delete_profile(
     cache.remove_profile(profile)
 
 
-def update_decks(
-    cache,
-    latest=False,
-    source=None,
-    target=None,
-    user=None,
-    path=None,
-    name=None,
-):
-    profiles = cache.filter_profiles(source, user, name)
-    if not profiles:
-        logging.info("No profiles match filters, nothing to do.")
-    for profile in profiles:
-        profile.update(latest, target, cache.get_dir_cache(path))
-
-
-# TODO: mtgo shortcuts
+# TODO: mtgo, xmage shortcuts
 def set_up_shortcuts():
     if os.name == "nt":
         from . import relnk
@@ -360,7 +344,8 @@ def main():
         delete_profile(cache, args.interactive, source, args.user, args.name)
 
     if not args.skip_update:
-        update_decks(cache, args.latest, source, target, args.user, path)
+        for profile in cache.profiles:
+            profile.update(args.latest)
 
     cache.save()
 

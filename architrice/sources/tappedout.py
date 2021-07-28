@@ -3,6 +3,7 @@ import re
 import bs4
 import requests
 
+from .. import caching
 from .. import utils
 
 from . import source
@@ -23,13 +24,9 @@ class TappedOut(source.Source):
         for line in mtga_string.split("\n"):
             m = TappedOut.MTGA_CARD_REGEX.match(line)
             if m:
-                # Note that tappedout gives card names in the same format as
-                # Cockatrice, so DFCs already have the back face name stripped
-                # and no further processing needs doing, hence is_dfc can be
-                # False
-                cards.append(
-                    source.DeckCard(m.group("qty"), m.group("name"), False)
-                )
+                # TODO tappedout doesn't include back face names in dfcs, so
+                # card info retrieval will fail at present
+                cards.append((m.group("qty"), m.group("name")))
         return cards
 
     def deck_to_generic_format(
@@ -156,7 +153,11 @@ class TappedOut(source.Source):
                         updated = self.age_string_to_timestamp(h5.text.strip())
                         break
 
-                decks.append(source.DeckUpdate(deck_id, self.short, updated))
+                decks.append(
+                    caching.DeckUpdate(
+                        caching.DeckDetails(deck_id, self.short), updated
+                    )
+                )
 
             i += 1
 

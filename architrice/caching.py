@@ -1,181 +1,460 @@
-import dataclasses
+import asyncio
+import concurrent.futures
 import logging
 import os
 
 from . import database
-from . import profile
 from . import sources
 from . import targets
 from . import utils
 
 
-# TODO: This ignores targets. Need to mirror the database structure where
-# deckfiles reference decks.
-@dataclasses.dataclass
-class DeckFile:
-    deck_id: str
-    source: str
-    file_name: str = None
-    updated: int = 0
-    db_id: int = None
+class Card(database.StoredObject):
+    def __init__(
+        self,
+        name,
+        mtgo_id=None,
+        is_dfc=False,
+        collector_number=None,
+        edition=None,
+        db_id=None,
+    ):
+        super().__init__("cards", db_id)
+        self.name = name
+        self.mtgo_id = mtgo_id
+        self.is_dfc = is_dfc
+        self.collector_number = collector_number
+        self.edition = edition
+
+    def __repr__(self):
+        return (
+            f"<Card name={self.name} mtgo_id={self.mtgo_id} "
+            f"is_dfc={self.is_dfc} collector_number={self.collector_number} "
+            f"edition={self.edition} id={self.id}>"
+        )
+
+    @staticmethod
+    def from_record(tup):
+        # database record format:
+        # (id, name, mtgo_id, is_dfc, collector_number, set, is_reprint)
+        _, name, mtgo_id, is_dfc, collector_number, edition, _ = tup
+        return Card(
+            name, mtgo_id and str(mtgo_id), is_dfc, collector_number, edition
+        )
+
+
+class DeckDetails(database.StoredObject):
+    """A DeckDetails object represents a deck in a source."""
+
+    def __init__(self, deck_id, source, db_id=None):
+        super().__init__("decks", db_id)
+        self.deck_id = deck_id
+        self.source = source  # Source.short
+
+    def __hash__(self):
+        return hash((self.deck_id, self.source))
+
+    def __repr__(self):
+        return (
+            f"<DeckDetails deck_id={self.deck_id} source={self.source} "
+            f"id={self._id}>"
+        )
+
+
+class Deck(DeckDetails):
+    """A Deck object represents a deck downloaded from a source."""
+
+    # The cards held by the deck are (quantity, name) tuples rather than Card
+    # objects. They are parsed into Cards before saving.
+    def __init__(self, deck_id, source, name, description, **kwargs):
+        super().__init__(deck_id, source, db_id=kwargs.get("id"))
+        self.name = name
+        self.description = description
+        self.main = kwargs.get("main", [])
+        self.side = kwargs.get("side", [])
+        self.maybe = kwargs.get("maybe", [])
+        self.commanders = kwargs.get("commanders", [])
+
+    def __repr__(self):
+        return super().__repr__().replace("<DeckDetails", "<Deck")
+
+    def get_card_names(self, board):
+        return [c[1] for c in self.get_board(board)]
+
+    def get_all_card_names(self):
+        return set(
+            self.get_card_names("main")
+            + self.get_card_names("side")
+            + self.get_card_names("maybe")
+            + self.get_card_names("commanders")
+        )
+
+    def get_main_deck(self, include_commanders=False):
+        if include_commanders:
+            return self.main + self.commanders
+        return self.main
+
+    def get_sideboard(self, include_commanders=True, include_maybe=True):
+        sideboard = self.side
+        if include_commanders:
+            sideboard += self.commanders
+        if include_maybe:
+            sideboard += self.maybe
+        return sideboard
+
+    def get_board(self, board, default="main"):
+        board = board.strip().lower()
+        if board == "commanders":
+            return self.commanders
+        elif board in ["maybe", "maybeboard"]:
+            return self.maybe
+        elif board in ["side", "sideboard"]:
+            return self.side
+        elif board in ["main", "maindeck", "mainboard"]:
+            return self.main
+        else:
+            return self.get_board(default)
+
+    def add_card(self, card, board):
+        self.get_board(board).append(card)
+
+    def add_cards(self, cards, board):
+        self.get_board(board).extend(cards)
+
+
+class DeckUpdate:
+    """A DeckUpdate represents the last time a Deck was updated on a source."""
+
+    # Because these are not stored anywhere, they don't need a db id.
+    def __init__(self, deck, updated):
+        self.deck = deck
+        self.updated = updated
+
+    def __repr__(self):
+        return f"<DeckUpdate deck={repr(self.deck)} updated={self.updated}>"
 
     def update(self):
         self.updated = utils.time_now()
 
 
-class DirCache:
-    def __init__(self, path, db_id=None):
-        self.path = path
-        self.tracked = {}  # {(source_short, deck_id): DeckFile}
-        self.id = db_id
+class DeckFile(database.StoredObject, DeckUpdate):
+    """A DeckFile represents the last time a local Deck file was updated."""
+
+    def __init__(self, deck, updated, file_name, output, db_id=None):
+        database.StoredObject.__init__(self, "deck_files", db_id)
+        DeckUpdate.__init__(self, deck, updated)
+        self.output = output
+        self.file_name = file_name
 
     def __repr__(self):
-        return f"<DirCache path={self.path} id={self.id}>"
+        return (
+            super().__repr__().replace("<DeckUpdate", "<DeckFile")[:-1]
+            + f" file_name={self.file_name} id={self._id}>"
+        )
 
-    def create_key(self, source_short, deck_id):
-        return (source_short, deck_id)
 
-    def tracked_key(self, update):
-        return self.create_key(update.source, update.deck_id)
+class OutputDir(database.StoredObject):
+    def __init__(self, path, db_id=None):
+        super().__init__("output_dirs", db_id)
+        self.path = path
+        self.deck_files = {}  # (Output, Deck) : DeckFile
 
-    def tracking(self, update):
-        return self.tracked_key(update) in self.tracked
+    def __repr__(self):
+        return (
+            f"<OutputDir path={self.path} n_deck_files={len(self.deck_files)} "
+            f"id={self._id}>"
+        )
 
-    def track(self, update):
-        self.tracked[self.tracked_key(update)] = update
+    def create_file_name(self, output, deck):
+        """Create a file name for a deck. Will be unique in this dir."""
 
-    def add_deck_update(self, update):
-        # Works with both source.DeckUpdate and DeckFile objects
+        file_name = suggested_file_name = output.target.create_file_name(
+            deck.name
+        )
 
-        if deck_file := self.tracked.get(self.tracked_key(update)):
-            deck_file.updated = max(deck_file.updated, update.updated)
-        else:
-            if isinstance(update, DeckFile):
-                self.track(update)
-            else:
-                self.track(
-                    DeckFile(update.deck_id, update.source, update.updated)
-                )
+        i = 1
+        while any(d.file_name == file_name for d in self.deck_files.values()):
+            file_name = suggested_file_name.replace(".", f"_{i}.")
+            i += 1
 
-    def needs_update(self, update):
-        return update and (
-            not self.tracking(update)
+        return file_name
+
+    def add_deck_file(self, output, deck_file):
+        self.deck_files[(output, deck_file.deck)] = deck_file
+
+    def get_deck_file(self, output, deck):
+        key = (output, deck)
+        if key not in self.deck_files:
+            self.deck_files[key] = DeckFile(
+                deck, 0, self.create_file_name(output, deck), output
+            )
+        return self.deck_files[key]
+
+    def has_deck_file(self, output, deck):
+        return (output, deck) in self.deck_files
+
+    def deck_needs_updating(self, output, deck_update):
+        return deck_update and (  # update is non null and one of
+            not self.has_deck_file(
+                output, deck_update.deck
+            )  # it's never been downloaded
             or not os.path.exists(
                 os.path.join(
-                    self.path, self.tracked[self.tracked_key(update)].file_name
+                    self.path,
+                    (
+                        deck_file := self.get_deck_file(
+                            output, deck_update.deck
+                        )
+                    ).file_name,
                 )
-            )
-            or update.updated > self.tracked[self.tracked_key(update)].updated
+            )  # or the file has been deleted
+            or deck_update.updated
+            > deck_file.updated  # or it's been updated at the source
         )
+
+
+class Output(database.StoredObject):
+    def __init__(self, target, output_dir, profile=None, db_id=None):
+        super().__init__("outputs", db_id)
+        self.target = target
+        self.output_dir = output_dir
+        self.profile = profile
+
+    def __hash__(self):
+        return hash(self.target.short)
+
+    def __repr__(self):
+        return (
+            f"<Output target={self.target.short} "
+            f"output_dir={repr(self.output_dir)} id={self._id}>"
+        )
+
+    def equivalent(self, other):
+        return other and (
+            other.target is self.target and other.output_dir is self.output_dir
+        )
+
+    def set_profile(self, profile):
+        self.profile = profile
+
+    def get_updated_deck_file(self, deck):
+        deck_file = self.output_dir.get_deck_file(self, deck)
+        deck_file.update()
+
+        return deck_file
+
+    def save_deck(self, deck):
+        self.target.save_deck(
+            deck,
+            os.path.join(
+                self.output_dir.path, self.get_updated_deck_file(deck).file_name
+            ),
+        )
+
+    def save_decks(self, decks):
+        deck_tuples = []
+        for deck in decks:
+            deck_file = self.get_updated_deck_file(deck)
+            deck_tuples.append(
+                (deck, os.path.join(self.output_dir.path, deck_file.file_name))
+            )
+
+        self.target.save_decks(deck_tuples)
+
+    def deck_needs_updating(self, deck_update):
+        return self.output_dir.deck_needs_updating(self, deck_update)
 
     def decks_to_update(self, deck_updates):
         to_update = []
-        for update in deck_updates:
-            if self.needs_update(update):
-                to_update.append(update.deck_id)
+        for deck_update in deck_updates:
+            if self.deck_needs_updating(deck_update):
+                to_update.append(deck_update.deck.deck_id)
         return to_update
 
-    def get_deck_file(self, source_short, deck_id):
-        key = self.create_key(source_short, deck_id)
-        if key not in self.tracked:
-            self.tracked[key] = DeckFile(deck_id, source_short)
-            logging.debug(f"Tracking new deck file for deck {deck_id}.")
-        return self.tracked[key]
+
+# TODO: profile output filtering when loading profile
+class Profile(database.StoredObject):
+    THREAD_POOL_MAX_WORKERS = 12
+
+    def __init__(self, source, user, name, outputs=None, db_id=None):
+        super().__init__("profiles", db_id)
+        self.source = source
+        self.user = user
+        self.name = name
+        self.outputs = outputs or []
+
+    def __repr__(self):
+        return (
+            f"<Profile source={self.source.short} user={self.user} "
+            f"name={self.name} outputs={self.outputs} id={self._id}>"
+        )
+
+    @property
+    def user_string(self):
+        return f"{self.user} on {self.source.name}"
+
+    def equivalent(self, other):
+        return (
+            other.user == self.user  # same user
+            and other.source is self.source  # on same website
+            and all(
+                any(output.path == o.path for o in self.outputs)
+                for output in other.outputs
+            )  # with a subset of the outputs
+        )
+
+    def add_output(self, output):
+        output.set_profile(self)
+        if not any(o.equivalent(output) for o in self.outputs):
+            self.outputs.append(output)
+        else:
+            logging.info(
+                "Skipping output addition as new output is equivalent to an"
+                " existing output."
+            )
+
+    def save_deck(self, deck):
+        for output in self.outputs:
+            output.save_deck(deck)
+
+    def save_decks(self, decks):
+        for output in self.outputs:
+            output.save_decks(decks)
+
+    def download_deck(self, deck_id):
+        logging.debug(f"Downloading {self.source.name} deck {deck_id}.")
+
+        return self.source.get_deck(deck_id)
+
+    # This is asynchronous so that it can use a ThreadPoolExecutor to speed up
+    # perfoming many deck requests.
+    async def download_decks_pool(self, loop, deck_ids):
+        logging.info(
+            f"Downloading {len(deck_ids)} decks for {self.user_string}."
+        )
+
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=Profile.THREAD_POOL_MAX_WORKERS
+        ) as executor:
+            futures = [
+                loop.run_in_executor(executor, self.download_deck, deck_id)
+                for deck_id in deck_ids
+            ]
+            decks = await asyncio.gather(*futures)
+
+        # Gather all decks and then save synchonously so that we can update the
+        # card database first if necessary.
+        self.save_decks(decks)
+
+    def download_all(self):
+        logging.info(f"Updating all decks for {self.user_string}.")
+
+        decks_to_update = set()
+        deck_list = self.source.get_deck_list(self.user)
+        for output in self.outputs:
+            decks_to_update.update(output.decks_to_update(deck_list))
+
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self.download_decks_pool(loop, decks_to_update))
+
+        logging.info(f"Successfully updated all decks for {self.user_string}.")
+
+    def download_latest(self):
+        latest = self.source.get_latest_deck(self.user)
+        if any(output.deck_needs_updating(latest) for output in self.outputs):
+            logging.info(f"Updating latest deck for {self.user_string}.")
+            self.save_deck(self.download_deck(latest.deck.deck_id))
+        else:
+            logging.info(
+                f"{self.source.name} user {self.user}"
+                "'s latest deck is up to date."
+            )
+
+    def update(self, latest):
+        if not self.outputs:
+            logging.info(
+                f"No outputs match filters for {self.user_string}. Skipping."
+            )
+
+        if latest:
+            self.download_latest()
+        else:
+            self.download_all()
+
+    def store(self):
+        super().store()
+        for output in self.outputs:
+            output.store()
 
 
 class Cache:
-    def __init__(self, profiles=None, dir_caches=None):
-        self.profiles = profiles if profiles is not None else []
-        self.dir_caches = dir_caches if dir_caches is not None else []
+    def __init__(self, profiles=None, output_dirs=None):
+        self.profiles = profiles or []
+        self.output_dirs = output_dirs or []
 
-    def add_profile(self, prof, new=True):
+    def get_output_dir(self, path):
+        if not path:
+            return None
+
+        for output_dir in self.output_dirs:
+            if os.path.samefile(path, output_dir.path):
+                break
+        else:
+            logging.debug(f"Adding new OutputDir for {path}")
+            output_dir = OutputDir(path)
+            self.output_dirs.append(output_dir)
+        return output_dir
+
+    def add_profile(self, profile):
         for p in self.profiles:
-            if p.equivalent(prof):
+            if p.equivalent(profile):
                 logging.info(
                     f"A profile with identical details already exists, "
                     "skipping creation."
                 )
-                return
+                return None
 
-        self.profiles.append(prof)
+        self.profiles.append(profile)
+        return profile
 
-        if new:
-            logging.info(
-                f"Added new profile: {prof.user} on {prof.source.name}."
-            )
-
-        return prof
-
-    def remove_profile(self, prof):
-        self.profiles.remove(prof)
-        if prof.id:
-            database.delete("profiles", id=prof.id)
-        logging.info(f"Deleted profile for {str(prof)}.")
+    def remove_profile(self, profile):
+        self.profiles.remove(profile)
+        if profile.id:
+            database.delete("profiles", id=profile.id)
+        logging.info(f"Deleted profile for {profile.user_string}.")
 
     def build_profile(self, source, user, name):
-        return self.add_profile(
-            profile.Profile(
-                source,
-                user,
-                [],
-                name,
-            )
-        )
+        return self.add_profile(Profile(source, user, name, []))
 
-    def build_profile_dir(self, prof, target, path):
-        prof.add_dir(profile.ProfileDir(target, self.get_dir_cache(path)))
+    def build_output(self, profile, target, path):
+        profile.add_output(Output(target, self.get_output_dir(path)))
 
-    def filter_profiles(self, source, user, name):
-        ret = []
-        for p in self.profiles:
-            if source and p.source is not source:
-                continue
-            if user and p.user != user:
-                continue
-            if name and p.name != name:
-                continue
-            ret.append(p)
-        return ret
+    # TODO currently errors out.
+    def save(self):
+        logging.debug("Saving cache to database.")
+        database.disable_logging()
 
-    def get_dir_cache(self, path):
-        if not path:
-            return None
+        for profile in self.profiles:
+            profile.store()
+        for output_dir in self.output_dirs:
+            output_dir.store()
+            for deck_file in output_dir.deck_files.values():
+                deck_file.store()
 
-        for dir_cache in self.dir_caches:
-            if os.path.samefile(path, dir_cache.path):
-                break
-        else:
-            logging.debug(f"Adding new DirCache for {path}.")
-            dir_cache = DirCache(path)
-            self.dir_caches.append(dir_cache)
-        return dir_cache
+        database.enable_logging()
+        database.commit()
+        logging.debug("Successfullly saved cache, closing connection.")
+        database.close()
 
     @staticmethod
     def load(source=None, target=None, user=None, path=None, name=None):
+        """Load all relevant data into memory from the database."""
         database.init()
 
-        dir_caches = []
-        for tup in database.select_ignore_none("dirs", path=path):
+        output_dirs = []
+        for tup in database.select_ignore_none("output_dirs", path=path):
             db_id, path = tup
-            dir_cache = DirCache(path, db_id)
-            dir_caches.append(dir_cache)
-
-            for tup in database.execute(
-                "SELECT d.deck_id, d.source, df.id, df.file_name, df.updated "
-                "FROM deck_files df LEFT JOIN decks d ON df.deck = d.id "
-                "WHERE df.dir = ?;",
-                (dir_cache.id,),
-            ):
-                df_deck_id, df_source, df_db_id, df_file_name, df_updated = tup
-                dir_cache.add_deck_update(
-                    DeckFile(
-                        df_deck_id,
-                        df_source,
-                        df_file_name,
-                        df_updated,
-                        df_db_id,
-                    )
-                )
+            output_dirs.append(OutputDir(path, db_id))
 
         profiles = []
         for tup in database.select_ignore_none(
@@ -186,91 +465,63 @@ class Cache:
         ):
             profile_db_id, profile_source, profile_user, profile_name = tup
 
-            profile_dirs = []
+            outputs = []
             for tup in database.select_ignore_none(
-                "profile_dirs",
+                "outputs",
                 target=getattr(target, "short", None),
                 profile=profile_db_id,
             ):
-                profile_dir_db_id, profile_dir_target, dir_cache_id, _ = tup
+                output_db_id, output_target, output_dir_id, _ = tup
 
-                for dir_cache in dir_caches:
-                    if dir_cache.id == dir_cache_id:
+                for output_dir in output_dirs:
+                    if output_dir.id == output_dir_id:
                         break
                 else:
                     raise LookupError(
-                        f"Failed to find dir with id {dir_cache_id}."
+                        f"Failed to find dir with id {output_dir_id}."
                     )
 
-                profile_dirs.append(
-                    profile.ProfileDir(
-                        targets.get_target(profile_dir_target),
-                        dir_cache,
-                        profile_dir_db_id,
-                    )
+                output = Output(
+                    targets.get_target(output_target),
+                    output_dir,
+                    db_id=output_db_id,
                 )
+                outputs.append(output)
+
+                for tup in database.execute(
+                    "SELECT "
+                    "d.id, d.deck_id, d.source, df.id, df.file_name, df.updated"
+                    " FROM deck_files df LEFT JOIN decks d ON df.deck = d.id "
+                    "WHERE df.dir = ?;",
+                    (output_dir.id,),
+                ):
+                    (
+                        d_db_id,
+                        d_deck_id,
+                        d_source,
+                        df_db_id,
+                        df_file_name,
+                        df_updated,
+                    ) = tup
+                    output_dir.add_deck_file(
+                        output,
+                        DeckFile(
+                            DeckDetails(d_deck_id, d_source, d_db_id),
+                            df_updated,
+                            df_file_name,
+                            output,
+                            df_db_id,
+                        ),
+                    )
+
             profiles.append(
-                profile.Profile(
+                Profile(
                     sources.get_source(profile_source),
                     profile_user,
-                    profile_dirs,
                     profile_name,
+                    outputs,
                     profile_db_id,
                 )
             )
 
-        return Cache(profiles, dir_caches)
-
-    def save(self):
-        logging.debug("Saving cache.")
-        database.disable_logging()
-
-        dir_caches = []
-        for profile in self.profiles:
-            if profile.id is None:
-                profile.id = database.insert(
-                    "profiles",
-                    source=profile.source.short,
-                    user=profile.user,
-                    name=profile.name,
-                )
-            for profile_dir in profile.dirs:
-                if profile_dir.id is None:
-                    if profile_dir.dir.id is None:
-                        profile_dir.dir.id = database.insert(
-                            "dirs", path=profile_dir.dir.path
-                        )
-                    profile_dir.id = database.insert(
-                        "profile_dirs",
-                        target=profile_dir.target.short,
-                        dir=profile_dir.dir.id,
-                        profile=profile.id,
-                    )
-
-                if profile_dir.dir not in dir_caches:
-                    dir_caches.append(profile_dir.dir)
-
-        for dir_cache in dir_caches:
-            for deck_file in dir_cache.tracked.values():
-                deck = database.select_one_column(
-                    "decks", "id", deck_id=deck_file.deck_id
-                )
-                if not deck:
-                    deck = database.insert(
-                        "decks",
-                        deck_id=deck_file.deck_id,
-                        source=deck_file.source,
-                    )
-
-                database.upsert(
-                    "deck_files",
-                    deck=deck,
-                    file_name=deck_file.file_name,
-                    dir=dir_cache.id,
-                    updated=deck_file.updated,
-                )
-
-        database.enable_logging()
-        database.commit()
-        logging.debug("Successfully saved cache, closing database connection.")
-        database.close()
+        return Cache(profiles, output_dirs)

@@ -54,28 +54,27 @@ class Mtgo(target.Target):
         return deck_to_xml(deck, path, card_info_map)
 
 
-def mtgo_name(card):
-    return card.name.partition("//")[0].strip()
+def mtgo_name(name):
+    return name.partition("//")[0].strip()
 
 
-def add_card(root, card, card_info_map, in_sideboard=False):
-    info = card_info_map.get(card.name)
+def add_card(root, quantity, name, card_info_map, in_sideboard=False):
+    info = card_info_map.get(name)
     if info and info.mtgo_id:
         et.SubElement(
             root,
             "Cards",
             {
                 "CatID": info.mtgo_id,
-                "Quantity": str(card.quantity),
+                "Quantity": str(quantity),
                 "Sideboard": "true" if in_sideboard else "false",
-                "Name": mtgo_name(card),
+                "Name": mtgo_name(name),
                 "Annotation": "0",
             },
         )
     else:
         logging.info(
-            f"Couldn't find MTGO data for {card.name}."
-            " It may not exist on MTGO."
+            f"Couldn't find MTGO data for {name}." " It may not exist on MTGO."
         )
 
 
@@ -91,9 +90,9 @@ def deck_to_xml(deck, outfile, card_info_map):
     et.SubElement(root, "NetDeckID").text = "0"
     et.SubElement(root, "PreconstructedDeckID").text = "0"
 
-    for card in deck.get_main_deck():
-        add_card(root, card, card_info_map)
-    for card in deck.get_sideboard():
-        add_card(root, card, card_info_map, True)
+    for quantity, name in deck.get_main_deck():
+        add_card(root, quantity, name, card_info_map)
+    for quantity, name in deck.get_sideboard():
+        add_card(root, quantity, name, card_info_map, True)
 
     et.ElementTree(root).write(outfile, xml_declaration=True, encoding="utf-8")

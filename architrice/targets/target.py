@@ -1,15 +1,18 @@
 import abc
 import os
 
+from .. import database
 from .. import utils
 
 from . import card_info
 
 
-class Target(abc.ABC):
+class Target(database.KeyStoredObject, abc.ABC):
     SUPPORTED_OS = ["posix", "nt"]
 
     def __init__(self, name, short, file_extension, needs_card_info=True):
+        database.KeyStoredObject.__init__(self, short)
+
         self.name = name
         self.short = short
         self.file_extension = file_extension
@@ -24,6 +27,7 @@ class Target(abc.ABC):
         else:
             return utils.expand_path(os.path.join("~", "Decks"))
 
+    @abc.abstractmethod
     def save_deck(self, deck, path, card_info_map=None):
         """Writes deck to path in format using card_info_map."""
 

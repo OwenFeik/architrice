@@ -2,8 +2,11 @@ import abc
 import dataclasses
 import logging
 
+from .. import caching
+from .. import database
 
-class Source(abc.ABC):
+
+class Source(database.KeyStoredObject, abc.ABC):
     # Abstract base class for deck sources, used to have common logging between
     # them.
     #
@@ -14,12 +17,14 @@ class Source(abc.ABC):
     # instantiated.
 
     def __init__(self, name, short):
+        database.KeyStoredObject.__init__(self, short)
+
         self.name = name
         self.short = short
 
     def create_deck(self, deck_id, name, description):
         """Create a Deck with relevant information."""
-        return Deck(deck_id, self.short, name, description)
+        return caching.Deck(deck_id, self.short, name, description)
 
     def _get_deck(self, deck_id):
         pass
@@ -53,7 +58,7 @@ class Source(abc.ABC):
         if latest:
             logging.info(
                 f"Latest deck for {self.name} user {username} "
-                f"has ID {latest.deck_id}."
+                f"has ID {latest.deck.deck_id}."
             )
         else:
             logging.info(
@@ -73,64 +78,3 @@ class Source(abc.ABC):
         else:
             logging.error("Verfification failed.")
         return result
-
-
-@dataclasses.dataclass
-class DeckCard:
-    quantity: int
-    name: str
-    is_dfc: bool
-
-
-class Deck:
-    def __init__(self, deck_id, source, name, description, **kwargs):
-        self.deck_id = deck_id
-        self.source = source
-        self.name = name
-        self.description = description
-        self.main = kwargs.get("main", [])
-        self.side = kwargs.get("side", [])
-        self.maybe = kwargs.get("maybe", [])
-        self.commanders = kwargs.get("commanders", [])
-
-    def get_all_cards(self):
-        return self.main + self.side + self.maybe + self.commanders
-
-    def get_main_deck(self, include_commanders=False):
-        if include_commanders:
-            return self.main + self.commanders
-        return self.main
-
-    def get_sideboard(self, include_commanders=True, include_maybe=True):
-        sideboard = self.side
-        if include_commanders:
-            sideboard += self.commanders
-        if include_maybe:
-            sideboard += self.maybe
-        return sideboard
-
-    def get_board(self, board, default="main"):
-        board = board.strip().lower()
-        if board == "commanders":
-            return self.commanders
-        elif board in ["maybe", "maybeboard"]:
-            return self.maybe
-        elif board in ["side", "sideboard"]:
-            return self.side
-        elif board in ["main", "maindeck", "mainboard"]:
-            return self.main
-        else:
-            return self.get_board(default)
-
-    def add_card(self, card, board):
-        self.get_board(board).append(card)
-
-    def add_cards(self, cards, board):
-        self.get_board(board).extend(cards)
-
-
-@dataclasses.dataclass
-class DeckUpdate:
-    deck_id: str  # ID of the deck within the relevant web service
-    source: str  # Short name of the source this deck is from
-    updated: int  # UTC timestamp of last updated time
