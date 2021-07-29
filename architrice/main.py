@@ -118,13 +118,13 @@ def get_output_path(cache, interactive, target, path):
                 return
             path = None
 
-    if cache.dir_caches and cli.get_decision("Use existing output directory?"):
-        if len(cache.dir_caches) == 1:
-            path = cache.dir_caches[0].path
+    if cache.output_dirs and cli.get_decision("Use existing output directory?"):
+        if len(cache.output_dirs) == 1:
+            path = cache.output_dirs[0].path
             logging.info(f"Only one existing directory, defaulting to {path}.")
         else:
             path = cli.get_choice(
-                [d.path for d in cache.dir_caches],
+                [d.path for d in cache.output_dirs],
                 "Which existing directory should be used for these decks?",
             )
     else:

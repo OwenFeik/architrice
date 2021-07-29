@@ -414,6 +414,16 @@ database = Database(
             ],
         ),
         Table(
+            "users",
+            [
+                Column("id", "INTEGER", primary_key=True),
+                Column("name", "TEXT", not_null=True),
+                Column("source", "TEXT", references="sources", not_null=True),
+                Column("source_id", "TEXT"),
+            ],
+            ["UNIQUE(source, name)"]
+        ),
+        Table(
             "targets",
             [
                 Column("short", "TEXT", primary_key=True),

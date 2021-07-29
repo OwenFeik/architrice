@@ -271,8 +271,13 @@ class Output(database.StoredObject):
                 to_update.append(deck_update.deck.deck_id)
         return to_update
 
+class User(database.StoredObject):
+    def __init__(self, name, source, source_id=None, db_id=None):
+        super().__init__("users", db_id)
+        self.name: str = name
+        self.source: str = source
+        self.source_id: str = source_id
 
-# TODO: profile output filtering when loading profile
 class Profile(database.StoredObject):
     THREAD_POOL_MAX_WORKERS = 12
 
@@ -528,5 +533,7 @@ class Cache:
                     profile_db_id,
                 )
             )
+
+        print([output_dir.deck_files for output_dir in output_dirs])
 
         return Cache(profiles, output_dirs)
