@@ -102,6 +102,12 @@ def update_card_list():
 @functools.cache  # cache to save repeated db queries
 def find(name, mtgo_id_required=False, update_if_necessary=True):
     matches = list(database.select("cards", name=name))
+    if not matches:
+        matches = list(
+            database.execute(
+                "SELECT * FROM cards WHERE name LIKE ?;", (name + "%",)
+            )
+        )
 
     # Try and get original printing
     for tup in matches:

@@ -2,6 +2,7 @@ import asyncio
 import concurrent.futures
 import logging
 import os
+import typing
 
 from . import database
 from . import sources
@@ -20,11 +21,11 @@ class Card(database.StoredObject):
         db_id=None,
     ):
         super().__init__("cards", db_id)
-        self.name = name
-        self.mtgo_id = mtgo_id
-        self.is_dfc = is_dfc
-        self.collector_number = collector_number
-        self.edition = edition
+        self.name: str = name
+        self.mtgo_id: str = mtgo_id
+        self.is_dfc: bool = is_dfc
+        self.collector_number: str = collector_number
+        self.edition: str = edition
 
     def __repr__(self):
         return (
@@ -48,8 +49,13 @@ class DeckDetails(database.StoredObject):
 
     def __init__(self, deck_id, source, db_id=None):
         super().__init__("decks", db_id)
-        self.deck_id = deck_id
-        self.source = source  # Source.short
+        self.deck_id: str = deck_id
+        self.source: str = source
+
+        if deck_id == source == None:
+            import traceback
+
+            traceback.print_stack()
 
     def __hash__(self):
         return hash((self.deck_id, self.source))
@@ -68,12 +74,16 @@ class Deck(DeckDetails):
     # objects. They are parsed into Cards before saving.
     def __init__(self, deck_id, source, name, description, **kwargs):
         super().__init__(deck_id, source, db_id=kwargs.get("id"))
-        self.name = name
-        self.description = description
-        self.main = kwargs.get("main", [])
-        self.side = kwargs.get("side", [])
-        self.maybe = kwargs.get("maybe", [])
-        self.commanders = kwargs.get("commanders", [])
+        self.name: str = name
+        self.description: str = description
+        self.main: typing.List[typing.Tuple[int, str]] = kwargs.get("main", [])
+        self.side: typing.List[typing.Tuple[int, str]] = kwargs.get("side", [])
+        self.maybe: typing.List[typing.Tuple[int, str]] = kwargs.get(
+            "maybe", []
+        )
+        self.commanders: typing.List[typing.Tuple[int, str]] = kwargs.get(
+            "commanders", []
+        )
 
     def __repr__(self):
         return super().__repr__().replace("<DeckDetails", "<Deck")
@@ -127,8 +137,8 @@ class DeckUpdate:
 
     # Because these are not stored anywhere, they don't need a db id.
     def __init__(self, deck, updated):
-        self.deck = deck
-        self.updated = updated
+        self.deck: DeckDetails = deck
+        self.updated: int = updated
 
     def __repr__(self):
         return f"<DeckUpdate deck={repr(self.deck)} updated={self.updated}>"
@@ -143,8 +153,8 @@ class DeckFile(database.StoredObject, DeckUpdate):
     def __init__(self, deck, updated, file_name, output, db_id=None):
         database.StoredObject.__init__(self, "deck_files", db_id)
         DeckUpdate.__init__(self, deck, updated)
-        self.output = output
-        self.file_name = file_name
+        self.output: Output = output
+        self.file_name: str = file_name
 
     def __repr__(self):
         return (
@@ -152,18 +162,27 @@ class DeckFile(database.StoredObject, DeckUpdate):
             + f" file_name={self.file_name} id={self._id}>"
         )
 
-# TODO: currently doesn't update, just adds a number to file name
+
 class OutputDir(database.StoredObject):
+    # Keep a dict mapping path to OutputDir so that only one object exists for
+    # each output directory.
+    output_dirs: typing.Dict[str, "OutputDir"] = {}
+
     def __init__(self, path, db_id=None):
         super().__init__("output_dirs", db_id)
-        self.path = path
-        self.deck_files = {}  # (Output, Deck) : DeckFile
+        self.path: str = path
+
+        # maps hash(Output, DeckDetails) to DeckFile
+        self.deck_files: typing.Dict[int, DeckFile] = {}
 
     def __repr__(self):
         return (
             f"<OutputDir path={self.path} n_deck_files={len(self.deck_files)} "
             f"id={self._id}>"
         )
+
+    def key(self, output, deck):
+        return hash((output, deck))
 
     def create_file_name(self, output, deck):
         """Create a file name for a deck. Will be unique in this dir."""
@@ -180,10 +199,10 @@ class OutputDir(database.StoredObject):
         return file_name
 
     def add_deck_file(self, output, deck_file):
-        self.deck_files[(output, deck_file.deck)] = deck_file
+        self.deck_files[self.key(output, deck_file.deck)] = deck_file
 
     def get_deck_file(self, output, deck):
-        key = (output, deck)
+        key = self.key(output, deck)
         if key not in self.deck_files:
             self.deck_files[key] = DeckFile(
                 deck, 0, self.create_file_name(output, deck), output
@@ -191,7 +210,7 @@ class OutputDir(database.StoredObject):
         return self.deck_files[key]
 
     def has_deck_file(self, output, deck):
-        return (output, deck) in self.deck_files
+        return self.key(output, deck) in self.deck_files
 
     def deck_needs_updating(self, output, deck_update):
         return deck_update and (  # update is non null and one of
@@ -212,15 +231,56 @@ class OutputDir(database.StoredObject):
             > deck_file.updated  # or it's been updated at the source
         )
 
+    def store(self):
+        super().store()
+        for deck_file in self.deck_files.values():
+            deck_file.store()
+
+    @staticmethod
+    def get_all():
+        for tup in database.select("output_dirs"):
+            db_id, path = tup
+            if path not in OutputDir.output_dirs:
+                OutputDir.output_dirs[path] = OutputDir(path, db_id)
+
+        return list(OutputDir.output_dirs.values())
+
+    @staticmethod
+    def get(path):
+        if not path:
+            return None
+
+        if path not in OutputDir.output_dirs:
+            for output_dir in OutputDir.output_dirs.values():
+                if os.path.samefile(path, output_dir.path):
+                    return output_dir
+
+            OutputDir.output_dirs[path] = OutputDir(
+                path, database.select_one_column("output_dirs", "id", path=path)
+            )
+        return OutputDir.output_dirs[path]
+
+    @staticmethod
+    def load(db_id):
+        if not db_id:
+            return None
+
+        path = (database.select_one_column("output_dirs", "path", id=db_id),)
+        OutputDir.output_dirs[path] = OutputDir(path, db_id)
+        return OutputDir.output_dirs[path]
+
 
 class Output(database.StoredObject):
     def __init__(self, target, output_dir, profile=None, db_id=None):
         super().__init__("outputs", db_id)
-        self.target = target
-        self.output_dir = output_dir
-        self.profile = profile
+        self.target: targets.target.Target = target
+        self.output_dir: OutputDir = output_dir
+        self.profile: Profile = profile
 
     def __hash__(self):
+        # Only needs to be unique to a given output_dir.
+        # As an output dir can have at most one output for each target, the
+        # target is a perfect hash.
         return hash(self.target.short)
 
     def __repr__(self):
@@ -271,22 +331,84 @@ class Output(database.StoredObject):
                 to_update.append(deck_update.deck.deck_id)
         return to_update
 
+    def store(self):
+        super().store()
+        self.output_dir.store()
+
+
 class User(database.StoredObject):
+    # Keep a dict mapping (name, source) to User so that only one instance
+    # exists for each user.
+    users: typing.Dict[typing.Tuple[str, str], "User"] = {}
+
     def __init__(self, name, source, source_id=None, db_id=None):
         super().__init__("users", db_id)
         self.name: str = name
         self.source: str = source
         self.source_id: str = source_id
 
+    def __hash__(self):
+        return hash((self.name, self.source))
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return (
+            f"<User name={self.name} source={self.source} "
+            f"source_id={self.source_id}>"
+        )
+
+    @staticmethod
+    def get_all():
+        for tup in database.select("users"):
+            db_id, name, short, source_id = tup
+            key = (name, short)
+            if key not in User.users:
+                User.users[key] = User(name, short, source_id, db_id)
+
+        return User.users.values()
+
+    @staticmethod
+    def get(name, source: sources.source.Source):
+        if not name:
+            return None
+
+        key = (name, source.short)
+        if key not in User.users:
+            User.users[key] = User(
+                name,
+                source.short,
+                None,
+                database.select_one_column(
+                    "users", "id", name=name, source=source.short
+                ),
+            )
+
+        return User.users[key]
+
+    @staticmethod
+    def load(db_id):
+        if not db_id:
+            return None
+
+        name, short, source_id = database.select_one(
+            "users", ["name", "source", "source_id"], id=db_id
+        )
+        user = User(name, short, source_id, db_id)
+        User.users[(name, short)] = user
+        return user
+
+
 class Profile(database.StoredObject):
     THREAD_POOL_MAX_WORKERS = 12
 
-    def __init__(self, source, user, name, outputs=None, db_id=None):
+    def __init__(self, user, name, outputs=None, db_id=None):
         super().__init__("profiles", db_id)
-        self.source = source
-        self.user = user
-        self.name = name
-        self.outputs = []
+        self.source: sources.source.Source = sources.get_source(user.source)
+        self.user: User = user
+        self.name: str = name
+        self.outputs: typing.List[Output] = []
 
         if outputs:
             for output in outputs:
@@ -359,7 +481,7 @@ class Profile(database.StoredObject):
         logging.info(f"Updating all decks for {self.user_string}.")
 
         decks_to_update = set()
-        deck_list = self.source.get_deck_list(self.user)
+        deck_list = self.source.get_deck_list(self.user.name)
         for output in self.outputs:
             decks_to_update.update(output.decks_to_update(deck_list))
 
@@ -369,7 +491,7 @@ class Profile(database.StoredObject):
         logging.info(f"Successfully updated all decks for {self.user_string}.")
 
     def download_latest(self):
-        latest = self.source.get_latest_deck(self.user)
+        latest = self.source.get_latest_deck(self.user.name)
         if any(output.deck_needs_updating(latest) for output in self.outputs):
             logging.info(f"Updating latest deck for {self.user_string}.")
             self.save_deck(self.download_deck(latest.deck.deck_id))
@@ -391,6 +513,7 @@ class Profile(database.StoredObject):
             self.download_all()
 
     def store(self):
+        self.user.store()
         super().store()
         for output in self.outputs:
             output.store()
@@ -398,21 +521,7 @@ class Profile(database.StoredObject):
 
 class Cache:
     def __init__(self, profiles=None, output_dirs=None):
-        self.profiles = profiles or []
-        self.output_dirs = output_dirs or []
-
-    def get_output_dir(self, path):
-        if not path:
-            return None
-
-        for output_dir in self.output_dirs:
-            if os.path.samefile(path, output_dir.path):
-                break
-        else:
-            logging.debug(f"Adding new OutputDir for {path}")
-            output_dir = OutputDir(path)
-            self.output_dirs.append(output_dir)
-        return output_dir
+        self.profiles: typing.List[Profile] = profiles or []
 
     def add_profile(self, profile):
         for p in self.profiles:
@@ -433,23 +542,19 @@ class Cache:
         logging.info(f"Deleted profile for {profile.user_string}.")
 
     def build_profile(self, source, user, name):
-        return self.add_profile(Profile(source, user, name, []))
+        return self.add_profile(Profile(User.get(user, source), name, []))
 
     def build_output(self, profile, target, path):
-        profile.add_output(Output(target, self.get_output_dir(path)))
+        profile.add_output(Output(target, OutputDir.get(path)))
 
     def save(self):
         logging.debug("Saving cache to database.")
-        
+
         if not utils.DEBUG:
             database.disable_logging()
 
         for profile in self.profiles:
             profile.store()
-        for output_dir in self.output_dirs:
-            output_dir.store()
-            for deck_file in output_dir.deck_files.values():
-                deck_file.store()
 
         database.enable_logging()
         database.commit()
@@ -467,13 +572,23 @@ class Cache:
             output_dirs.append(OutputDir(path, db_id))
 
         profiles = []
-        for tup in database.select_ignore_none(
-            "profiles",
-            source=getattr(source, "short", None),
-            user=user,
-            name=name,
-        ):
-            profile_db_id, profile_source, profile_user, profile_name = tup
+
+        query = (
+            "SELECT p.id, p.user, p.name "
+            "FROM profiles p LEFT JOIN users u ON p.user = u.id"
+        )
+        arguments = []
+        conditions = []
+        if user:
+            conditions.append("UPPER(u.name) = UPPER(?)")
+            arguments.append(user)
+        if source:
+            conditions.append("u.source = ?")
+            arguments.append(source.short)
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        for tup in database.execute(query + ";", arguments):
+            profile_db_id, profile_user, profile_name = tup
 
             outputs = []
             for tup in database.select_ignore_none(
@@ -526,14 +641,11 @@ class Cache:
 
             profiles.append(
                 Profile(
-                    sources.get_source(profile_source),
-                    profile_user,
+                    User.load(profile_user),
                     profile_name,
                     outputs,
                     profile_db_id,
                 )
             )
-
-        print([output_dir.deck_files for output_dir in output_dirs])
 
         return Cache(profiles, output_dirs)

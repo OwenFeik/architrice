@@ -96,7 +96,10 @@ def get_verified_user(source, user, interactive=False):
         else:
             return None
 
-    if not source.verify_user(user):
+    if not (
+        database.select_one("users", source=source.short, name=user)
+        or source.verify_user(user)
+    ):
         if interactive:
             print("Couldn't find any public decks for this user. Try again.")
             return get_verified_user(source, None, True)
@@ -118,13 +121,16 @@ def get_output_path(cache, interactive, target, path):
                 return
             path = None
 
-    if cache.output_dirs and cli.get_decision("Use existing output directory?"):
-        if len(cache.output_dirs) == 1:
-            path = cache.output_dirs[0].path
+    existing_output_dirs = caching.OutputDir.get_all()
+    if existing_output_dirs and cli.get_decision(
+        "Use existing output directory?"
+    ):
+        if len(existing_output_dirs) == 1:
+            path = existing_output_dirs[0].path
             logging.info(f"Only one existing directory, defaulting to {path}.")
         else:
             path = cli.get_choice(
-                [d.path for d in cache.output_dirs],
+                [d.path for d in existing_output_dirs],
                 "Which existing directory should be used for these decks?",
             )
     else:
@@ -191,7 +197,7 @@ def delete_profile(
     user=None,
     name=None,
 ):
-    options = cache.filter_profiles(source, user, name)
+    options = cache.profiles
 
     if not options:
         logging.info("No matching profiles exist, ignoring delete option.")
@@ -318,13 +324,14 @@ def main():
     args = parse_args()
     source = sources.get_source(args.source)
     target = targets.get_target(args.target)
+    user = args.user.strip()
     path = utils.expand_path(args.path)
 
     utils.set_up_logger(
         0 if args.quiet else args.verbosity + 1 if args.verbosity else 1
     )
 
-    cache = caching.Cache.load(source, target, args.user, path, args.name)
+    cache = caching.Cache.load(source, target, user, path, args.name)
 
     if args.relink:
         set_up_shortcuts()
@@ -337,11 +344,11 @@ def main():
             set_up_shortcuts()
     elif args.add:
         add_profile(
-            cache, args.interactive, source, target, args.user, path, args.name
+            cache, args.interactive, source, target, user, path, args.name
         )
 
     if args.delete:
-        delete_profile(cache, args.interactive, source, args.user, args.name)
+        delete_profile(cache, args.interactive, source, user, args.name)
 
     if not args.skip_update:
         for profile in cache.profiles:

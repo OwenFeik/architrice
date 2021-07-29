@@ -44,9 +44,10 @@ class TappedOut(source.Source):
 
         # Move commanders to correct list
         to_move = []
-        for card in d.main:
-            if card.name in commanders:
-                to_move.append(card)
+        for tup in d.main:
+            _, card = tup
+            if card in commanders:
+                to_move.append(tup)
 
         for card in to_move:
             d.main.remove(card)
@@ -72,7 +73,7 @@ class TappedOut(source.Source):
                 for card in tag.find_next_sibling("ul").select("span.card > a"):
                     commanders.append(card.get("data-name"))
 
-        PAGE_TITLE_PREFIX = "MTG DECK: "
+        PAGE_TITLE_PREFIX = "MTG Deck: "
         name = (
             soup.find("meta", attrs={"property": "og:title"})
             .get("content")

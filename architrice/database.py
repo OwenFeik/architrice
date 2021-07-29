@@ -3,6 +3,7 @@ import enum
 import logging
 import os
 import sqlite3
+import typing
 
 from . import utils
 
@@ -13,7 +14,7 @@ class Database:
     USER_VERSION = 0
 
     def __init__(self, file, tables=None):
-        self.file = file
+        self.file: str = file
         self.conn = self.cursor = None
         self.tables_to_init = tables
         self.tables = {}
@@ -167,9 +168,9 @@ class Column:
 
 class Table:
     def __init__(self, name, columns, constraints=None, db=None):
-        self.name = name
-        self.columns = columns
-        self.constraints = constraints or []
+        self.name: str = name
+        self.columns: typing.List[Column] = columns
+        self.constraints: typing.List[str] = constraints or []
         self.set_db(db)
 
     def set_db(self, db, create=True):
@@ -212,7 +213,7 @@ class Table:
                 + " = "
                 + self.substitution_string(update_columns)
             )
-        
+
         return (
             " ON CONFLICT"
             + self.column_string(conflict_columns)
@@ -223,7 +224,9 @@ class Table:
         # Note: this mutates the argument list to add additional arguments
         # for the new updates.
 
-        update_columns = [c for c in column_names if c not in conflict_columns and c != "id"]
+        update_columns = [
+            c for c in column_names if c not in conflict_columns and c != "id"
+        ]
         for c in update_columns:
             arguments.append(arguments[column_names.index(c)])
         return update_columns
@@ -356,7 +359,7 @@ class KeyStoredObject:
     # by keys.
 
     def __init__(self, key):
-        self.key = key
+        self.key: str = key
 
 
 class StoredObject:
@@ -366,8 +369,8 @@ class StoredObject:
     # id column are applicable.
 
     def __init__(self, table, db_id=None):
-        self.table = table
-        self._id = db_id
+        self.table: str = table
+        self._id: int = db_id
 
     @property
     def id(self):
@@ -397,7 +400,16 @@ class StoredObject:
         if insert_id:
             self._id = insert_id
         elif not self._id:
-            self._id = select_one_column(self.table, "id", **{column.name: self.get_value(column.name) for column in database.tables[self.table].columns if column.name != "id"})
+            self._id = select_one_column(
+                self.table,
+                "id",
+                **{
+                    column.name: self.get_value(column.name)
+                    for column in database.tables[self.table].columns
+                    if column.name != "id"
+                },
+            )
+
 
 class DatabaseEvents(enum.Enum):
     CARD_LIST_UPDATE = 1
@@ -421,7 +433,7 @@ database = Database(
                 Column("source", "TEXT", references="sources", not_null=True),
                 Column("source_id", "TEXT"),
             ],
-            ["UNIQUE(source, name)"]
+            ["UNIQUE(source, name)"],
         ),
         Table(
             "targets",
@@ -457,8 +469,7 @@ database = Database(
             "profiles",
             [
                 Column("id", "INTEGER", primary_key=True),
-                Column("source", "TEXT", references="sources", not_null=True),
-                Column("user", "TEXT", not_null=True),
+                Column("user", "INTEGER", references="users", not_null=True),
                 Column("name", "TEXT", unique=True),
             ],
         ),
