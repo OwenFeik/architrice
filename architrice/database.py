@@ -44,7 +44,6 @@ class Database:
     def insert(self, table, **kwargs):
         """Execute an INSERT into table using kwarg keys and values."""
         self.tables[table].insert(**kwargs)
-        print(f"Returning id: {self.cursor.lastrowid}.")
         return self.cursor.lastrowid
 
     def upsert(self, table, **kwargs):
@@ -183,15 +182,6 @@ class Table:
             if c.primary_key:
                 return c
 
-    def conflict_condition(self):
-        # Prioritises UNIQUE restrictions, followed by primary key
-
-        for c in self.constraints:
-            if "UNIQUE" in c:
-                return c.replace("UNIQUE(", "").replace(")", "")
-
-        return self.primary_key().name
-
     def create(self):
         self.db.execute(
             f"CREATE TABLE IF NOT EXISTS {self.name} ("
@@ -206,23 +196,72 @@ class Table:
                     f"ON {self.name} ({c.name});"
                 )
 
-    # TODO ; don't update id on conflict
-    def insert_command(self, column_names, conflict=None):
-        column_name_string = ", ".join(column_names)
-        substitution_string = ("?, " * len(column_names))[:-2]
+    def column_string(self, columns):
+        return "(" + ", ".join(columns) + ")"
+
+    def substitution_string(self, iterable):
+        return "(" + ("?, " * len(iterable))[:-2] + ")"
+
+    def on_conflict_update_string(self, conflict_columns, update_columns):
+        return (
+            " ON CONFLICT"
+            + self.column_string(conflict_columns)
+            + " DO UPDATE SET "
+            + self.column_string(update_columns)
+            + " = "
+            + self.substitution_string(update_columns)
+        )
+
+    def update_columns(self, conflict_columns, column_names, arguments):
+        # Note: this mutates the argument list to add additional arguments
+        # for the new updates.
+
+        update_columns = [c for c in column_names if c not in conflict_columns]
+        for c in update_columns:
+            arguments.append(arguments[column_names.index(c)])
+        return update_columns
+
+    def create_upsert_string(self, column_names, arguments):
+        conflict_string = ""
+
+        for c in self.constraints:
+            if "UNIQUE" in c:
+                conflict_columns = (
+                    c.replace("UNIQUE(", "").replace(")", "").split(", ")
+                )
+
+                # Only handle conflicts in columns which could actually occur
+                if any(c in column_names for c in conflict_columns):
+                    conflict_string += self.on_conflict_update_string(
+                        conflict_columns,
+                        self.update_columns(
+                            conflict_columns, column_names, arguments
+                        ),
+                    )
+
+        for c in self.columns:
+            if (c.unique or c.primary_key) and c.name in column_names:
+                conflict_string += self.on_conflict_update_string(
+                    [c.name],
+                    self.update_columns([c.name], column_names, arguments),
+                )
+
+        return conflict_string
+
+    def insert_command(self, column_names, arguments, conflict=None):
+        substitution_string = self.substitution_string(arguments)
+
+        if conflict == "update":
+            upsert_string = self.create_upsert_string(column_names, arguments)
+        else:
+            upsert_string = ""
+
         return (
             "INSERT "
             + ("OR IGNORE " if conflict == "ignore" else "")
-            + f"INTO {self.name} ({column_name_string}) VALUES "
-            + f"({substitution_string})"
-            + (
-                (
-                    f" ON CONFLICT({self.conflict_condition()}) DO UPDATE SET "
-                    f"({column_name_string}) = ({substitution_string})"
-                )
-                if conflict == "update"
-                else ""
-            )
+            + f"INTO {self.name} {self.column_string(column_names)} VALUES "
+            + substitution_string
+            + upsert_string
             + ";"
         )
 
@@ -232,23 +271,24 @@ class Table:
     def create_insert_args(self, **kwargs):
         column_names = self.column_names(**kwargs)
         arguments = [kwargs[name] for name in column_names]
-        if kwargs.get("conflict") == "update":
-            arguments *= 2
         return (column_names, arguments)
 
     def insert(self, **kwargs):
         column_names, arguments = self.create_insert_args(**kwargs)
         self.db.execute(
-            self.insert_command(column_names, kwargs.get("conflict")),
+            self.insert_command(
+                column_names, arguments, kwargs.get("conflict")
+            ),
             arguments,
         )
 
     def insert_many(self, **kwargs):
         column_names, arguments = self.create_insert_args(**kwargs)
-        arguments = zip(*arguments)
         self.db.execute_many(
-            self.insert_command(column_names, kwargs.get("conflict")),
-            arguments,
+            self.insert_command(
+                column_names, arguments, kwargs.get("conflict")
+            ),
+            zip(*arguments),
         )
 
     def is_null_check(self, arg):
@@ -334,11 +374,8 @@ class StoredObject:
         """Store this object in the database."""
 
         kwargs = {}
-        print(self.table, database.tables[self.table].columns)
         for column in database.tables[self.table].columns:
-            print(column)
             if column.name == "id":
-                print(f"Obj id check:", id(self), repr(self))
                 value = self._id
             else:
                 value = getattr(self, column.name, None)
@@ -347,9 +384,7 @@ class StoredObject:
             elif isinstance(value, KeyStoredObject):
                 value = value.key
             kwargs[column.name] = value
-        print(f"Obj before:", id(self), repr(self))
         self._id = upsert(self.table, **kwargs)
-        print(f"Obj after:", id(self), repr(self))
 
 
 class DatabaseEvents(enum.Enum):
