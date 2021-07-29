@@ -152,7 +152,7 @@ class DeckFile(database.StoredObject, DeckUpdate):
             + f" file_name={self.file_name} id={self._id}>"
         )
 
-
+# TODO: currently doesn't update, just adds a number to file name
 class OutputDir(database.StoredObject):
     def __init__(self, path, db_id=None):
         super().__init__("output_dirs", db_id)
@@ -281,7 +281,11 @@ class Profile(database.StoredObject):
         self.source = source
         self.user = user
         self.name = name
-        self.outputs = outputs or []
+        self.outputs = []
+
+        if outputs:
+            for output in outputs:
+                self.add_output(output)
 
     def __repr__(self):
         return (
@@ -429,10 +433,11 @@ class Cache:
     def build_output(self, profile, target, path):
         profile.add_output(Output(target, self.get_output_dir(path)))
 
-    # TODO currently errors out.
     def save(self):
         logging.debug("Saving cache to database.")
-        database.disable_logging()
+        
+        if not utils.DEBUG:
+            database.disable_logging()
 
         for profile in self.profiles:
             profile.store()
@@ -492,8 +497,8 @@ class Cache:
                     "SELECT "
                     "d.id, d.deck_id, d.source, df.id, df.file_name, df.updated"
                     " FROM deck_files df LEFT JOIN decks d ON df.deck = d.id "
-                    "WHERE df.dir = ?;",
-                    (output_dir.id,),
+                    "WHERE df.output = ?;",
+                    (output.id,),
                 ):
                     (
                         d_db_id,
@@ -503,7 +508,7 @@ class Cache:
                         df_file_name,
                         df_updated,
                     ) = tup
-                    output_dir.add_deck_file(
+                    output.output_dir.add_deck_file(
                         output,
                         DeckFile(
                             DeckDetails(d_deck_id, d_source, d_db_id),

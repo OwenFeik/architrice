@@ -203,20 +203,27 @@ class Table:
         return "(" + ("?, " * len(iterable))[:-2] + ")"
 
     def on_conflict_update_string(self, conflict_columns, update_columns):
+        if len(update_columns) == 0:
+            update_string = " DO NOTHING"
+        else:
+            update_string = (
+                " DO UPDATE SET "
+                + self.column_string(update_columns)
+                + " = "
+                + self.substitution_string(update_columns)
+            )
+        
         return (
             " ON CONFLICT"
             + self.column_string(conflict_columns)
-            + " DO UPDATE SET "
-            + self.column_string(update_columns)
-            + " = "
-            + self.substitution_string(update_columns)
+            + update_string
         )
 
     def update_columns(self, conflict_columns, column_names, arguments):
         # Note: this mutates the argument list to add additional arguments
         # for the new updates.
 
-        update_columns = [c for c in column_names if c not in conflict_columns]
+        update_columns = [c for c in column_names if c not in conflict_columns and c != "id"]
         for c in update_columns:
             arguments.append(arguments[column_names.index(c)])
         return update_columns
@@ -370,22 +377,27 @@ class StoredObject:
             self.store()
         return self._id
 
+    def get_value(self, name):
+        if name == "id":
+            return self._id
+        value = getattr(self, name, None)
+        if isinstance(value, StoredObject):
+            value = value.id
+        elif isinstance(value, KeyStoredObject):
+            value = value.key
+        return value
+
     def store(self):
         """Store this object in the database."""
 
         kwargs = {}
         for column in database.tables[self.table].columns:
-            if column.name == "id":
-                value = self._id
-            else:
-                value = getattr(self, column.name, None)
-            if isinstance(value, StoredObject):
-                value = value.id
-            elif isinstance(value, KeyStoredObject):
-                value = value.key
-            kwargs[column.name] = value
-        self._id = upsert(self.table, **kwargs)
-
+            kwargs[column.name] = self.get_value(column.name)
+        insert_id = upsert(self.table, **kwargs)
+        if insert_id:
+            self._id = insert_id
+        elif not self._id:
+            self._id = select_one_column(self.table, "id", **{column.name: self.get_value(column.name) for column in database.tables[self.table].columns if column.name != "id"})
 
 class DatabaseEvents(enum.Enum):
     CARD_LIST_UPDATE = 1
