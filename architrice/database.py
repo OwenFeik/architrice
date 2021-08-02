@@ -374,7 +374,7 @@ class StoredObject:
 
     @property
     def id(self):
-        """Database ID of the StoreObject. Will store() to get one if needed."""
+        """Database ID of the StoredObject. Will store() to generate one."""
 
         if not self._id:
             self.store()
