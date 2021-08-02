@@ -53,9 +53,9 @@ def create_batch_file(shortcut_name, client_path):
         utils.DATA_DIR,
         BATCH_FILE_NAME.format(
             shortcut_name.replace(".lnk", "").lower()
-        ) # e.g. Cockatrice.lnk => run_cockatrice.bat.
+        ),  # e.g. Cockatrice.lnk => run_cockatrice.bat.
     )
-    
+
     if not os.path.exists(batch_file_path):
         with open(batch_file_path, "w") as f:
             f.write(

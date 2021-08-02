@@ -181,7 +181,7 @@ def add_profile(
     if name is None and interactive and cli.get_decision("Name this profile?"):
         name = cli.get_string("Profile name")
 
-    profile = cache.build_profile(source, user, name) 
+    profile = cache.build_profile(source, user, name)
 
     add_output(
         cache,
@@ -192,6 +192,7 @@ def add_profile(
     )
 
     return profile
+
 
 def delete_profile(
     cache,
@@ -349,9 +350,7 @@ def main():
 
     if len(sys.argv) == 1 and not cache.profiles:
         profile = add_profile(cache, args.interactive)
-        if cli.get_decision(
-            "Set up shortcuts to run Architrice?"
-        ):
+        if cli.get_decision("Set up shortcuts to run Architrice?"):
             set_up_shortcuts(args.interactive, profile.outputs[0].target)
     elif args.add:
         add_profile(

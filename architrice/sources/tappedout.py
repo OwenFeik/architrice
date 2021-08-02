@@ -24,8 +24,6 @@ class TappedOut(source.Source):
         for line in mtga_string.split("\n"):
             m = TappedOut.MTGA_CARD_REGEX.match(line)
             if m:
-                # TODO tappedout doesn't include back face names in dfcs, so
-                # card info retrieval will fail at present
                 cards.append((m.group("qty"), m.group("name")))
         return cards
 
