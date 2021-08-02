@@ -19,6 +19,8 @@ class Cockatrice(target.Target):
         else utils.expand_path("~/.local/share/Cockatrice/Cockatrice/decks")
     )
     DECK_FILE_EXTENSION = ".cod"
+    SHORTCUT_NAME = "Cockatrice.lnk"
+    EXECUTABLE_NAME = "cockatrice"
 
     def __init__(self):
         super().__init__(

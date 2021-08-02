@@ -6,8 +6,6 @@ import sys
 from . import cli
 from . import utils
 
-# TODO: -t RELEVANT_TARGET, remove -q
-
 # List of common shortcut locations on windows
 # ("Friendly name", "path\\to\\dir")
 SHORTCUT_PATHS = [
@@ -47,16 +45,22 @@ PS_ROOT_SNIPPET = "Start-Process powershell -Verb RunAs -Args '-Command {}'"
 PS_COMMAND_SNIPPET = 'powershell -command "{}"'
 
 # Name of the .bat file created to run both apps
-BATCH_FILE_NAME = "run_archi_cocka_trice.bat"
+BATCH_FILE_NAME = "run_{}.bat"
 
 
-def create_batch_file(client_path):
-    batch_file_path = os.path.join(utils.DATA_DIR, BATCH_FILE_NAME)
+def create_batch_file(shortcut_name, client_path):
+    batch_file_path = os.path.join(
+        utils.DATA_DIR,
+        BATCH_FILE_NAME.format(
+            shortcut_name.replace(".lnk", "").lower()
+        ) # e.g. Cockatrice.lnk => run_cockatrice.bat.
+    )
+    
     if not os.path.exists(batch_file_path):
         with open(batch_file_path, "w") as f:
             f.write(
                 PS_COMMAND_SNIPPET.format(f"Start-Process '{client_path}'")
-                + f"\n{sys.executable} -m architrice -q"
+                + f"\n{sys.executable} -m architrice"
             )
 
     return batch_file_path
@@ -115,5 +119,7 @@ def relink_shortcuts(shortcut_name, confirm=False):
                 shortcut_path = os.path.join(path, shortcut_name)
                 shortcut_target = get_shortcut_target(shortcut_path)
                 if shortcut_target and not BATCH_FILE_NAME in shortcut_target:
-                    script_path = create_batch_file(shortcut_target)
+                    script_path = create_batch_file(
+                        shortcut_name, shortcut_target
+                    )
                     relink_shortcut(shortcut_path, script_path)

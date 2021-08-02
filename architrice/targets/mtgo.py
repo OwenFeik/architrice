@@ -37,6 +37,7 @@ class Mtgo(target.Target):
         else []
     )
     DECK_FILE_EXTENSION = ".dek"
+    SHORTCUT_NAME = "MTGO.lnk"
 
     def __init__(self):
         super().__init__(Mtgo.NAME, Mtgo.SHORT, Mtgo.DECK_FILE_EXTENSION)

@@ -84,7 +84,7 @@ def get_target(name, picker=False):
 def target_picker():
     return cli.get_choice(
         [t.NAME for t in targets.targetlist],
-        "Output in which supported decklist format?",
+        "For which supported MtG client?",
         targets.targetlist,
     )()
 
@@ -181,14 +181,17 @@ def add_profile(
     if name is None and interactive and cli.get_decision("Name this profile?"):
         name = cli.get_string("Profile name")
 
+    profile = cache.build_profile(source, user, name) 
+
     add_output(
         cache,
         interactive,
-        cache.build_profile(source, user, name),
+        profile,
         target,
         path,
     )
 
+    return profile
 
 def delete_profile(
     cache,
@@ -216,28 +219,36 @@ def delete_profile(
     cache.remove_profile(profile)
 
 
-# TODO: mtgo, xmage shortcuts
-def set_up_shortcuts():
+def set_up_shortcuts(interactive, target):
+    if not (target or (target := get_target(None, interactive))):
+        logging.info(
+            "Unable to set up shortcuts as no target has been provided."
+        )
+        return
+
     if os.name == "nt":
         from . import relnk
 
         relnk.relink_shortcuts(
-            "Cockatrice.lnk",
+            target.SHORTCUT_NAME,
             not cli.get_decision("Automatically update all shortcuts?"),
         )
     elif os.name == "posix":
         APP_PATH = f"/usr/bin/{APP_NAME}"
         if cli.get_decision(
-            "Add script to run Cockatrice and Architrice to path?"
+            f"Add script to run Cockatrice and {target.name} to path?"
         ):
             script_path = os.path.join(utils.DATA_DIR, APP_NAME)
             with open(script_path, "w") as f:
-                f.write(f"cockatrice &\n{sys.executable} -m {APP_NAME} -q")
+                f.write(
+                    f"{target.EXECUTABLE_NAME} > /dev/null 2>&1 &\n"
+                    f"{sys.executable} -m {APP_NAME}"
+                )
             os.chmod(script_path, 0o755)
             subprocess.call(["sudo", "mv", script_path, APP_PATH])
             logging.info(
                 f'Running "{APP_NAME}" will now launch '
-                f"Cockatrice and run {APP_NAME}."
+                f"{target.name} and run {APP_NAME}."
             )
     else:
         logging.error("Unsupported operating system.")
@@ -324,7 +335,7 @@ def main():
     args = parse_args()
     source = sources.get_source(args.source)
     target = targets.get_target(args.target)
-    user = args.user.strip()
+    user = args.user and args.user.strip()
     path = utils.expand_path(args.path)
 
     utils.set_up_logger(
@@ -334,14 +345,14 @@ def main():
     cache = caching.Cache.load(source, target, user, path, args.name)
 
     if args.relink:
-        set_up_shortcuts()
+        set_up_shortcuts(args.interactive, target)
 
     if len(sys.argv) == 1 and not cache.profiles:
-        add_profile(cache, args.interactive)
+        profile = add_profile(cache, args.interactive)
         if cli.get_decision(
-            "Set up shortcuts to run Architrice when launching Cockatrice?"
+            "Set up shortcuts to run Architrice?"
         ):
-            set_up_shortcuts()
+            set_up_shortcuts(args.interactive, profile.outputs[0].target)
     elif args.add:
         add_profile(
             cache, args.interactive, source, target, user, path, args.name
