@@ -60,7 +60,7 @@ def create_batch_file(shortcut_name, client_path):
         with open(batch_file_path, "w") as f:
             f.write(
                 PS_COMMAND_SNIPPET.format(f"Start-Process '{client_path}'")
-                + f"\n{sys.executable} -m architrice"
+                + f"\n{sys.executable} -m architrice\n"
             )
 
     return batch_file_path

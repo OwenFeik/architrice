@@ -243,7 +243,7 @@ def set_up_shortcuts(interactive, target):
             with open(script_path, "w") as f:
                 f.write(
                     f"{target.EXECUTABLE_NAME} > /dev/null 2>&1 &\n"
-                    f"{sys.executable} -m {APP_NAME}"
+                    f"{sys.executable} -m {APP_NAME}\n"
                 )
             os.chmod(script_path, 0o755)
             subprocess.call(["sudo", "mv", script_path, APP_PATH])
