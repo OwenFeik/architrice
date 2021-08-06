@@ -3,6 +3,7 @@ import enum
 import logging
 import os
 import sqlite3
+import traceback
 import typing
 
 from . import utils
@@ -15,7 +16,7 @@ class Database:
 
     def __init__(self, file, tables=None):
         self.file: str = file
-        self.conn = self.cursor = None
+        self.conn = None
         self.tables_to_init = tables
         self.tables = {}
         self.log = True
@@ -23,7 +24,6 @@ class Database:
     def init(self, initial_setup=False):
         """Connect to and set up the database for user."""
         self.conn = sqlite3.connect(self.file)
-        self.cursor = self.conn.cursor()
 
         logging.debug("Connected to database.")
 
@@ -44,8 +44,7 @@ class Database:
 
     def insert(self, table, **kwargs):
         """Execute an INSERT into table using kwarg keys and values."""
-        self.tables[table].insert(**kwargs)
-        return self.cursor.lastrowid
+        return self.tables[table].insert(**kwargs)
 
     def upsert(self, table, **kwargs):
         """Execute an INSERT into table, updating on conflict."""
@@ -59,7 +58,8 @@ class Database:
     def insert_many_tuples(self, table, columns, tuples, conflict=None):
         """Execute many INSERT INTO INTO table (columns) VALUES(tuples)"""
         self.execute_many(
-            self.tables[table].insert_command(columns, conflict), tuples
+            self.tables[table].insert_command(columns, columns, conflict),
+            tuples,
         )
 
     def upsert_many(self, table, **kwargs):
@@ -110,15 +110,28 @@ class Database:
 
     def execute(self, command, tup=None):
         """Execute an SQL command, logging the command and data."""
+
+        cursor = self.conn.cursor()
+
         if tup:
             if self.log:
                 logging.debug(
                     f"Executing database command: {command} with values {tup}."
                 )
-            return self.cursor.execute(command, tup)
+
+            result = cursor.execute(command, tup)
+            return cursor.lastrowid if command.startswith("INSERT") else result
         if self.log:
             logging.debug(f"Executing database command: {command}")
-        return self.cursor.execute(command)
+
+        try:
+            result = cursor.execute(command)
+            return cursor.lastrowid if command.startswith("INSERT") else result
+        except sqlite3.Error as e:
+            logging.error(f"Database error: {str(e)}.")
+            if utils.DEBUG:
+                traceback.print_stack()
+            return []
 
     def execute_many(self, command, tups):
         """Execute many SQL commands."""
@@ -285,7 +298,7 @@ class Table:
 
     def insert(self, **kwargs):
         column_names, arguments = self.create_insert_args(**kwargs)
-        self.db.execute(
+        return self.db.execute(
             self.insert_command(
                 column_names, arguments, kwargs.get("conflict")
             ),
@@ -392,10 +405,10 @@ class StoredObject:
 
     def store(self):
         """Store this object in the database."""
-
         kwargs = {}
         for column in database.tables[self.table].columns:
             kwargs[column.name] = self.get_value(column.name)
+        print("storing", self)
         insert_id = upsert(self.table, **kwargs)
         if insert_id:
             self._id = insert_id
@@ -464,6 +477,7 @@ database = Database(
                     "profile", "INTEGER", references="profiles", not_null=True
                 ),
             ],
+            ["UNIQUE(target, output_dir, profile)"],
         ),
         Table(
             "profiles",

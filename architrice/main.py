@@ -89,6 +89,22 @@ def target_picker():
     )()
 
 
+def get_profile(cache, interactive, prompt="Choose a profile"):
+    if len(cache.profiles) == 1:
+        logging.info("Defaulted to only profile which matches criteria.")
+        return cache.profiles[0]
+    elif interactive:
+        return cli.get_choice(
+            [str(p) for p in cache.profiles], prompt, cache.profiles
+        )
+    else:
+        if not cache.profiles:
+            logging.error("No profiles, unable to select one.")
+        else:
+            logging.error("Multiple profiles match criteria.")
+        return None
+
+
 def get_verified_user(source, user, interactive=False):
     if not user:
         if interactive:
@@ -118,7 +134,7 @@ def get_output_path(cache, interactive, target, path):
                 "directory."
             )
             if not interactive:
-                return
+                return None
             path = None
 
     existing_output_dirs = caching.OutputDir.get_all()
@@ -150,15 +166,24 @@ def get_output_path(cache, interactive, target, path):
 
 def add_output(cache, interactive, profile, target=None, path=None):
     if profile is None:
-        return
+        if not (
+            profile := get_profile(
+                cache, interactive, "Add an output to which profile?"
+            )
+        ):
+            logging.error("No profile specified. Unable to add output.")
+            return
 
     if not (target := get_target(target, interactive)):
-        logging.error("No target specified. Unable to add profile.")
+        logging.error("No target specified. Unable to add output.")
         return
 
-    cache.build_output(
-        profile, target, get_output_path(cache, interactive, target, path)
-    )
+    path = get_output_path(cache, interactive, target, path)
+    if not path:
+        logging.error("No path specified. Unable to add output.")
+        return
+
+    cache.build_output(profile, target, path)
 
 
 def add_profile(
@@ -194,30 +219,10 @@ def add_profile(
     return profile
 
 
-def delete_profile(
-    cache,
-    interactive,
-    source=None,
-    user=None,
-    name=None,
-):
-    options = cache.profiles
-
-    if not options:
-        logging.info("No matching profiles exist, ignoring delete option.")
-        return
-    elif len(options) == 1:
-        logging.info("One profile matches criteria, deleting this.")
-        profile = options[0]
-    elif interactive:
-        profile = cli.get_choice(
-            [str(p) for p in options], "Delete which profile?", options
-        )
-    else:
-        logging.error("Multiple profiles match criteria. Skipping delete.")
-        return
-
-    cache.remove_profile(profile)
+def delete_profile(cache, interactive):
+    cache.remove_profile(
+        get_profile(cache, interactive, "Delete which profile?")
+    )
 
 
 def set_up_shortcuts(interactive, target):
@@ -329,6 +334,14 @@ def parse_args():
         action="store_true",
         help="create shortcuts for architrice",
     )
+    parser.add_argument(
+        "-o",
+        "--output",
+        dest="output",
+        action="store_true",
+        help="add an output to a profile",
+    )
+
     return parser.parse_args()
 
 
@@ -343,7 +356,10 @@ def main():
         0 if args.quiet else args.verbosity + 1 if args.verbosity else 1
     )
 
-    cache = caching.Cache.load(source, target, user, path, args.name)
+    if args.output:
+        cache = caching.Cache.load(source, None, user, None, args.name)
+    else:
+        cache = caching.Cache.load(source, target, user, path, args.name)
 
     if args.relink:
         set_up_shortcuts(args.interactive, target)
@@ -357,8 +373,11 @@ def main():
             cache, args.interactive, source, target, user, path, args.name
         )
 
+    if args.output:
+        add_output(cache, args.interactive, None, target, path)
+
     if args.delete:
-        delete_profile(cache, args.interactive, source, user, args.name)
+        delete_profile(cache, args.interactive)
 
     if not args.skip_update:
         for profile in cache.profiles:

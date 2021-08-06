@@ -153,13 +153,13 @@ class DeckFile(database.StoredObject, DeckUpdate):
     def __init__(self, deck, updated, file_name, output, db_id=None):
         database.StoredObject.__init__(self, "deck_files", db_id)
         DeckUpdate.__init__(self, deck, updated)
-        self.output: Output = output
         self.file_name: str = file_name
+        self.output: Output = output
 
     def __repr__(self):
         return (
             super().__repr__().replace("<DeckUpdate", "<DeckFile")[:-1]
-            + f" file_name={self.file_name} id={self._id}>"
+            + f" file_name={self.file_name} output={self.output} id={self._id}>"
         )
 
 

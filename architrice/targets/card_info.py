@@ -1,6 +1,7 @@
 import dataclasses
 import functools
 import logging
+import re
 
 import requests
 
@@ -12,6 +13,19 @@ SCRYFALL_BULK_DATA_URL = "https://api.scryfall.com/bulk-data/default-cards"
 # Scryfall updates its card list every 24 hours.
 # We will update no more frequently than this as it is a large download.
 CARD_LIST_UPDATE_INTERVAL = 60 * 60 * 24
+
+# Could consider Ascii normalising card names upon database insertion. This
+# would make it easier to find cards with accents in names. However, some
+# targets, like Cockatrice, need the accents in card names.
+#
+# ASCII_NORMALISATION_REGEX = re.compile(r"[^ !&'\(\),\-\./\?A-Z0-9_a-z]")
+#
+# def ascii_normalise_card_name(name):
+#     return re.sub(ASCII_NORMALISATION_REGEX, r"_", name)
+
+
+def wildcard_vowels(name):
+    return re.sub(r"[aeiou]", r"_", name)
 
 
 # Note: this should only be called from one thread at a time.
@@ -103,9 +117,23 @@ def update_card_list():
 def find(name, mtgo_id_required=False, update_if_necessary=True):
     matches = list(database.select("cards", name=name))
     if not matches:
+        # Some websites don't include the back face of cards in the name.
+        # Luckily, card face names are unique, so we can simply match cards
+        # whose name starts with the front face name.
         matches = list(
             database.execute(
-                "SELECT * FROM cards WHERE name LIKE ?;", (name + "%",)
+                "SELECT * FROM cards WHERE name LIKE ?;", (name + " // %",)
+            )
+        )
+
+    if not matches:
+        # Card names like like Seance are sometimes normalised to ascii and
+        # sometimes left with accents. If they're normalised to ascii, we might
+        # be able to find them by replacing vowels with wildcards.
+        matches = list(
+            database.execute(
+                "SELECT * FROM cards WHERE name LIKE ?;",
+                (wildcard_vowels(name),),
             )
         )
 

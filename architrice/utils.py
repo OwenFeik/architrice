@@ -5,7 +5,7 @@ import os
 import re
 import sys
 
-DEBUG = False
+DEBUG = True
 
 
 def get_data_dir():
