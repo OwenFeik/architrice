@@ -109,30 +109,49 @@ class Database:
         """DELETE FROM table WHERE kwarg keys = kwarg values"""
         self.tables[table].delete(**kwargs)
 
+    def execute_ret(self, is_insert, cursor, result):
+        if is_insert:
+            if cursor.rowcount:
+                return cursor.lastrowid
+            else:
+                return None
+        else:
+            return result
+
     def execute(self, command, tup=None):
         """Execute an SQL command, logging the command and data."""
 
         cursor = self.conn.cursor()
+        is_insert = command.startswith("INSERT")
 
         if tup:
-            if self.log:
-                logging.debug(
-                    f"Executing database command: {command} with values {tup}."
-                )
+            try:
+                if self.log:
+                    logging.debug(
+                        f"Executing database command: {command} with values "
+                        f"{tup}."
+                    )
 
-            result = cursor.execute(command, tup)
-            return cursor.lastrowid if command.startswith("INSERT") else result
+                return self.execute_ret(
+                    is_insert, cursor, cursor.execute(command, tup)
+                )
+            except sqlite3.Error as e:
+                logging.error(f"Database error: {str(e)}")
+                if utils.DEBUG:
+                    traceback.print_stack()
+                    exit()
+                return None if is_insert else []
+
         if self.log:
             logging.debug(f"Executing database command: {command}")
-
         try:
-            result = cursor.execute(command)
-            return cursor.lastrowid if command.startswith("INSERT") else result
+            return self.execute_ret(is_insert, cursor, cursor.execute(command))
         except sqlite3.Error as e:
             logging.error(f"Database error: {str(e)}.")
             if utils.DEBUG:
                 traceback.print_stack()
-            return []
+                exit()
+            return None if is_insert else []
 
     def execute_many(self, command, tups):
         """Execute many SQL commands."""
@@ -409,7 +428,6 @@ class StoredObject:
         kwargs = {}
         for column in database.tables[self.table].columns:
             kwargs[column.name] = self.get_value(column.name)
-        print("storing", self)
         insert_id = upsert(self.table, **kwargs)
         if insert_id:
             self._id = insert_id

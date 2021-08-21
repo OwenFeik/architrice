@@ -54,12 +54,12 @@ def update_card_list():
         logging.info("Latest Scryfall card list already downloaded.")
         return
 
-    logging.info("This may take a couple of minutes.")
     logging.info(
         "Downloading Scryfall card list for card data. Download size: "
         + str(download_info["compressed_size"])
         + " bytes."
     )
+    logging.info("This may take a couple of minutes.")
     # ~30MB download, ~230MB uncompressed
     data = requests.get(download_info["download_uri"]).json()
 
