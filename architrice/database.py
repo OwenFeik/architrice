@@ -8,21 +8,22 @@ import typing
 
 from . import utils
 
-DATABASE_FILE = os.path.join(utils.DATA_DIR, "architrice.db")
+DATABASE_FILE = "architrice.db"
 
 
 class Database:
     USER_VERSION = 0
 
-    def __init__(self, file, tables=None):
-        self.file: str = file
+    def __init__(self, tables=None):
         self.conn = None
+        self.file: str = None
         self.tables_to_init = tables
         self.tables = {}
         self.log = True
 
-    def init(self, initial_setup=False):
+    def init(self, database_file, initial_setup=False):
         """Connect to and set up the database for user."""
+        self.file = database_file
         self.conn = sqlite3.connect(self.file)
 
         logging.debug("Connected to database.")
@@ -429,7 +430,6 @@ class DatabaseEvents(enum.Enum):
 
 
 database = Database(
-    DATABASE_FILE,
     [
         Table(
             "sources",
@@ -555,9 +555,10 @@ disable_logging = database.disable_logging
 def init():
     """Connect to the database, setting it up if necessary."""
 
-    initial_setup = not os.path.exists(DATABASE_FILE)
+    database_file = os.path.join(utils.DATA_DIR, DATABASE_FILE)
+    initial_setup = not os.path.exists(database_file)
     utils.ensure_data_dir()
-    database.init(initial_setup)
+    database.init(database_file, initial_setup)
     if initial_setup:
         logging.debug("Performing first-time database setup.")
 
