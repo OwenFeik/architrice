@@ -21,6 +21,7 @@ class Cockatrice(target.Target):
     DECK_FILE_EXTENSION = ".cod"
     SHORTCUT_NAME = "Cockatrice.lnk"
     EXECUTABLE_NAME = "cockatrice"
+    SUPPORTS_RELNK = True
 
     def __init__(self):
         super().__init__(

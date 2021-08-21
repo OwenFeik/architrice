@@ -232,6 +232,9 @@ def set_up_shortcuts(interactive, target):
         )
         return
 
+    if not target.SUPPORTS_RELNK:
+        logging.info("This target doesn't support shortcut configuration.")
+
     if os.name == "nt":
         from . import relnk
 
@@ -367,8 +370,9 @@ def main():
     if len(sys.argv) == 1 and not cache.profiles:
         profile = add_profile(cache, args.interactive)
 
-        # TODO don't do this for targets which don't have this configured
-        if cli.get_decision("Set up shortcuts to run Architrice?"):
+        if profile.outputs[0].target.SUPPORTS_RELNK and cli.get_decision(
+            "Set up shortcuts to run Architrice?"
+        ):
             set_up_shortcuts(args.interactive, profile.outputs[0].target)
     elif args.add:
         add_profile(

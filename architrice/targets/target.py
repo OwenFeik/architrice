@@ -9,6 +9,7 @@ from . import card_info
 
 class Target(database.KeyStoredObject, abc.ABC):
     SUPPORTED_OS = ["posix", "nt"]
+    SUPPORTS_RELNK = False
 
     def __init__(self, name, short, file_extension, needs_card_info=True):
         database.KeyStoredObject.__init__(self, short)

@@ -38,6 +38,7 @@ class Mtgo(target.Target):
     )
     DECK_FILE_EXTENSION = ".dek"
     SHORTCUT_NAME = "Magic The Gathering Online.lnk"
+    SUPPORTS_RELNK = True
 
     def __init__(self):
         super().__init__(Mtgo.NAME, Mtgo.SHORT, Mtgo.DECK_FILE_EXTENSION)

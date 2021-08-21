@@ -10,6 +10,7 @@ class XMage(target.Target):
     SIDEBOARD_FORMAT = f"SB: {MAIN_DECK_FORMAT}"
     SHORTCUT_NAME = "XMage.lnk"
     EXECUTABLE_NAME = "mage-client"
+    SUPPORTS_RELNK = True
 
     def __init__(self):
         super().__init__(XMage.NAME, XMage.SHORT, XMage.FILE_EXTENSION)
