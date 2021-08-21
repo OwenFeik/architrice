@@ -530,7 +530,7 @@ class Cache:
                     f"A profile with identical details already exists, "
                     "skipping creation."
                 )
-                return None
+                return p
 
         self.profiles.append(profile)
         return profile

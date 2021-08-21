@@ -366,6 +366,8 @@ def main():
 
     if len(sys.argv) == 1 and not cache.profiles:
         profile = add_profile(cache, args.interactive)
+
+        # TODO don't do this for targets which don't have this configured
         if cli.get_decision("Set up shortcuts to run Architrice?"):
             set_up_shortcuts(args.interactive, profile.outputs[0].target)
     elif args.add:

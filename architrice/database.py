@@ -577,17 +577,19 @@ def init():
     initial_setup = not os.path.exists(database_file)
     utils.ensure_data_dir()
     database.init(database_file, initial_setup)
-    if initial_setup:
-        logging.debug("Performing first-time database setup.")
 
-        from . import sources
+    from . import sources
 
-        for source in sources.sourcelist:
-            insert("sources", short=source.SHORT, name=source.NAME)
+    for source in sources.sourcelist:
+        insert(
+            "sources", conflict="ignore", short=source.SHORT, name=source.NAME
+        )
 
-        from . import targets
+    from . import targets
 
-        for target in targets.targetlist:
-            insert("targets", short=target.SHORT, name=target.NAME)
+    for target in targets.targetlist:
+        insert(
+            "targets", conflict="ignore", short=target.SHORT, name=target.NAME
+        )
 
-        commit()
+    commit()
