@@ -46,7 +46,8 @@ Flags to filter or provide details of profiles:
 
 Providing these will cause Architrice to filter which profiles it loads. In 
 addition they will be used to fill in details for adding new profiles or
-outputs.
+outputs. Whenever you need to specify a source or target, you can just use the
+first letter. For example `G` instead of `Generic` when specifying a target.
 
 Flags to modify behaviour:
 
