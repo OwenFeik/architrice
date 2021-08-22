@@ -9,7 +9,7 @@ setuptools.setup(
     url="https://github.com/OwenFeik/architrice.git",
     author="Owen Feik",
     author_email="owen.h.feik@gmail.com",
-    description="Utility to MtG decklists from online sources.",
+    description="Utility to sync MtG decklists with online sources.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
