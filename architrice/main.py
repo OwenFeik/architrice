@@ -1,8 +1,7 @@
 #!/bin/python3
 
-from architrice import database
-from architrice.targets import mtgo
 import argparse
+import json
 import logging
 import os
 import subprocess
@@ -10,6 +9,7 @@ import sys
 
 from . import caching
 from . import cli
+from . import database
 from . import sources
 from . import targets
 from . import utils
@@ -49,7 +49,7 @@ def get_source(name, picker=False):
             return name
 
         try:
-            if source := sources.get_source(name):
+            if source := sources.get(name):
                 return source
         except ValueError:
             logging.error(f"Invalid source name: {name}.")
@@ -72,7 +72,7 @@ def get_target(name, picker=False):
             return name
 
         try:
-            if target := targets.get_target(name):
+            if target := targets.get(name):
                 return target
         except ValueError:
             logging.error(f"Invalid target name: {name}.")
@@ -90,6 +90,10 @@ def target_picker():
 
 
 def get_profile(cache, interactive, prompt="Choose a profile"):
+    if not cache.profiles:
+        logging.error("No profiles, unable to select one.")
+        return None
+
     if len(cache.profiles) == 1:
         logging.info("Defaulted to only profile which matches criteria.")
         return cache.profiles[0]
@@ -98,10 +102,7 @@ def get_profile(cache, interactive, prompt="Choose a profile"):
             [str(p) for p in cache.profiles], prompt, cache.profiles
         )
     else:
-        if not cache.profiles:
-            logging.error("No profiles, unable to select one.")
-        else:
-            logging.error("Multiple profiles match criteria.")
+        logging.error("Multiple profiles match criteria.")
         return None
 
 
@@ -122,6 +123,109 @@ def get_verified_user(source, user, interactive=False):
         else:
             return None
     return user
+
+
+def verify_output_json(output, i="\b"):
+    if not "target" in output:
+        logging.error(f"Output {i} is missing a target.")
+        return False
+    elif not isinstance(output["target"], str):
+        logging.error("Output targets must be strings.")
+        return False
+
+    try:
+        targets.get(output["target"], True)
+    except ValueError as e:
+        logging.error(str(e))
+        return False
+
+    if not "output_dir" in output:
+        logging.error(f"Output {i} is missing an output directory.")
+        return False
+    elif not isinstance(output["output_dir"], str):
+        logging.error("Output directories must be strings.")
+        return False
+
+    output["output_dir"] = utils.expand_path(output["output_dir"])
+    if not utils.check_dir(output["output_dir"]):
+        logging.error(f"Output directory {i} already exists and is a file.")
+        return False
+
+    return True
+
+
+def verify_profile_json(data):
+    if not "source" in data:
+        logging.error("Profile is missing a source.")
+        return False
+    elif not isinstance(data["source"], str):
+        logging.error("Source must be a string.")
+        return False
+
+    try:
+        source = sources.get(data["source"], True)
+    except ValueError as e:
+        logging.error(str(e))
+        return False
+
+    if not "user" in data:
+        logging.error("Profile is missing a user.")
+        return False
+    elif not isinstance(data["user"], str):
+        logging.error("User must be a string.")
+        return False
+
+    if get_verified_user(source, data.get("user")) is None:
+        return False
+
+    if "name" in data and not isinstance(data["name"], str):
+        logging.error("Name must be a string.")
+        return False
+
+    if not "outputs" in data:
+        data["outputs"] = []
+
+    if not isinstance(data["outputs"], list):
+        logging.error("Outputs must be in a list.")
+        return False
+
+    for i, output in enumerate(data.get("outputs")):
+        if not verify_output_json(output, i):
+            return False
+
+    return True
+
+
+def edit_profile_json(cache):
+    profile = get_profile(cache, "Edit which profile as JSON?")
+    if profile is None:
+        return
+
+    editing = json.dumps(profile.to_json(), indent=4)
+
+    while True:
+        try:
+            editing = cli.get_text_editor(editing, "profile.json")
+            edited_json = json.loads(editing)
+            if verify_profile_json(edited_json):
+                break
+        except json.JSONDecodeError:
+            logging.error("Failed to parse edited JSON.")
+
+        if not cli.get_decision("Try again?"):
+            return
+
+    new_profile = cache.build_profile(
+        sources.get(edited_json["source"]),
+        edited_json["user"],
+        edited_json["name"],
+    )
+    cache.remove_profile(profile)
+    for output in edited_json["outputs"]:
+        cache.build_output(
+            new_profile, targets.get(output["target"]), output["output_dir"]
+        )
+    logging.info("Successfully updated profile.")
 
 
 def get_output_path(cache, interactive, target, path):
@@ -220,9 +324,12 @@ def add_profile(
 
 
 def delete_profile(cache, interactive):
-    cache.remove_profile(
-        get_profile(cache, interactive, "Delete which profile?")
-    )
+    profile = get_profile(cache, interactive, "Delete which profile?")
+
+    if profile:
+        cache.remove_profile(profile)
+    else:
+        return
 
 
 def set_up_shortcuts(interactive, target):
@@ -344,14 +451,21 @@ def parse_args():
         action="store_true",
         help="add an output to a profile",
     )
+    parser.add_argument(
+        "-e",
+        "--edit",
+        dest="edit",
+        action="store_true",
+        help="edit a profile as JSON",
+    )
 
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    source = sources.get_source(args.source)
-    target = targets.get_target(args.target)
+    source = sources.get(args.source)
+    target = targets.get(args.target)
     user = args.user and args.user.strip()
     path = utils.expand_path(args.path)
 
@@ -384,6 +498,14 @@ def main():
 
     if args.delete:
         delete_profile(cache, args.interactive)
+
+    if args.edit:
+        if not args.interactive:
+            logging.info(
+                "Interactivity required to edit as JSON. Ignoring -e flag."
+            )
+        else:
+            edit_profile_json(cache)
 
     if not args.skip_update:
         for profile in cache.profiles:

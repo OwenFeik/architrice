@@ -79,7 +79,7 @@ def expand_path(path):
 
 
 def check_dir(path):
-    if path is None:
+    if not path:
         return False
     if os.path.isfile(path):
         return False

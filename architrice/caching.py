@@ -275,7 +275,7 @@ class Output(database.StoredObject):
         super().__init__("outputs", db_id)
         self.target: targets.target.Target = target
         self.output_dir: OutputDir = output_dir
-        self.profile: Profile = profile
+        self.profile: Profile = profile  # Needed for FK in db
 
     def __hash__(self):
         # Only needs to be unique to a given output_dir.
@@ -334,6 +334,18 @@ class Output(database.StoredObject):
     def store(self):
         super().store()
         self.output_dir.store()
+
+    def to_json(self):
+        return {
+            "target": self.target.name,
+            "output_dir": self.output_dir.path,
+        }
+
+    @staticmethod
+    def from_json(data):
+        return Output(
+            targets.get(data["target"], True), OutputDir.get(data["output_dir"])
+        )
 
 
 class User(database.StoredObject):
@@ -405,9 +417,9 @@ class Profile(database.StoredObject):
 
     def __init__(self, user, name, outputs=None, db_id=None):
         super().__init__("profiles", db_id)
-        self.source: sources.source.Source = sources.get_source(user.source)
+        self.source: sources.source.Source = sources.get(user.source)
         self.user: User = user
-        self.name: str = name
+        self.name: str = name or None  # Ignore empty string
         self.outputs: typing.List[Output] = []
 
         if outputs:
@@ -518,6 +530,22 @@ class Profile(database.StoredObject):
         for output in self.outputs:
             output.store()
 
+    def to_json(self):
+        return {
+            "source": self.source.name,
+            "user": self.user.name,
+            "name": self.name,
+            "outputs": [output.to_json() for output in self.outputs],
+        }
+
+    @staticmethod
+    def from_json(data):
+        return Profile(
+            User.get(data["user"], sources.get(data["source"], True)),
+            data["name"],
+            [Output.from_json(output) for output in data["outputs"]],
+        )
+
 
 class Cache:
     def __init__(self, profiles=None, output_dirs=None):
@@ -607,7 +635,7 @@ class Cache:
                     )
 
                 output = Output(
-                    targets.get_target(output_target),
+                    targets.get(output_target),
                     output_dir,
                     db_id=output_db_id,
                 )

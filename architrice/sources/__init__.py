@@ -9,14 +9,15 @@ sourcelist = [Archidekt, Deckstats, Moxfield, TappedOut]
 _sources = {}
 
 
-def get_source(name):
-    if name is None:
-        return None
+def get(name, error_on_fail=False):
+    if name:
+        name = name.lower()  # case insensitivity
+        for source in sourcelist:
+            if source.NAME.lower() == name or source.SHORT.lower() == name:
+                if source.SHORT not in _sources:
+                    _sources[source.SHORT] = source()
+                return _sources[source.SHORT]
 
-    name = name.lower()  # case insensitivity
-    for source in sourcelist:
-        if source.NAME.lower() == name or source.SHORT.lower() == name:
-            if source.SHORT not in _sources:
-                _sources[source.SHORT] = source()
-            return _sources[source.SHORT]
+    if error_on_fail:
+        raise ValueError(f'No source matching "{name}" exists.')
     return None
