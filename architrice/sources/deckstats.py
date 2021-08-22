@@ -1,8 +1,10 @@
-import datetime
 import re
 
 import bs4
 import requests
+
+from .. import caching
+from .. import utils
 
 from . import source
 
@@ -16,13 +18,13 @@ class Deckstats(source.Source):
         super().__init__(Deckstats.NAME, Deckstats.SHORT)
 
     def format_deck_id(self, deck_id, owner_id):
-        return super().format_deck_id(deck_id) + f"?owner_id={owner_id}"
+        return deck_id + f"?owner_id={owner_id}"
 
     def card_json_to_card(self, card):
-        return source.Card(card["amount"], card["name"], "//" in card["name"])
+        return (card["amount"], card["name"])
 
-    def deck_to_generic_format(self, deck):
-        d = source.Deck(deck["name"], "")
+    def deck_to_generic_format(self, deck_id, deck):
+        d = self.create_deck(deck_id, deck["name"], "")
 
         for section in deck.get("sections", []):
             for card in section.get("cards", []):
@@ -48,11 +50,12 @@ class Deckstats(source.Source):
     # escape ampersands in the id.
     def _get_deck(self, deck_id):
         return self.deck_to_generic_format(
+            deck_id,
             requests.get(
                 Deckstats.URL_BASE
                 + "api.php/?action=get_deck&id_type=saved&response_type=json"
                 f"&id={deck_id}",
-            ).json()
+            ).json(),
         )
 
     def get_user_id(self, username):
@@ -84,14 +87,16 @@ class Deckstats(source.Source):
                 },
             ).json()
 
-            if folder := data.get("folder"):
+            folder = data.get("folder")
+            if folder:
                 for deck in folder.get("decks", []):
                     decks.append(
-                        source.DeckUpdate(
-                            self.format_deck_id(deck["saved_id"], user_id),
-                            datetime.datetime.utcfromtimestamp(
-                                deck["updated"]
-                            ).timestamp(),
+                        caching.DeckUpdate(
+                            caching.DeckDetails(
+                                self.format_deck_id(deck["saved_id"], user_id),
+                                self.short,
+                            ),
+                            utils.timestamp_to_utc(deck["updated"]),
                         )
                     )
 

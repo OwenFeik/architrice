@@ -1,9 +1,9 @@
-import datetime
 import re
 
 import bs4
 import requests
 
+from .. import caching
 from .. import utils
 
 from . import source
@@ -24,17 +24,13 @@ class TappedOut(source.Source):
         for line in mtga_string.split("\n"):
             m = TappedOut.MTGA_CARD_REGEX.match(line)
             if m:
-                # Note that tappedout gives card names in the same format as
-                # Cockatrice, so DFCs already have the back face name stripped
-                # and no further processing needs doing, hence is_dfc can be
-                # False
-                cards.append(
-                    source.Card(m.group("qty"), m.group("name"), False)
-                )
+                cards.append((m.group("qty"), m.group("name")))
         return cards
 
-    def deck_to_generic_format(self, mtga_deck, name, description, commanders):
-        d = source.Deck(name, description)
+    def deck_to_generic_format(
+        self, deck_id, mtga_deck, name, description, commanders
+    ):
+        d = self.create_deck(deck_id, name, description)
 
         SIDEBOARD_SEPERATOR = "\n\n"
         if SIDEBOARD_SEPERATOR in mtga_deck:
@@ -46,9 +42,10 @@ class TappedOut(source.Source):
 
         # Move commanders to correct list
         to_move = []
-        for card in d.main:
-            if card.name in commanders:
-                to_move.append(card)
+        for tup in d.main:
+            _, card = tup
+            if card in commanders:
+                to_move.append(tup)
 
         for card in to_move:
             d.main.remove(card)
@@ -64,6 +61,9 @@ class TappedOut(source.Source):
         html = requests.get(
             f"{TappedOut.URL_BASE}mtg-decks/{deck_id}/"
         ).content.decode()
+
+        with open(utils.DATA_DIR + "/tmp.html", "w") as f:
+            f.write(html)
         soup = bs4.BeautifulSoup(html, "html.parser")
 
         mtga_deck = soup.find(attrs={"id": "mtga-textarea"}).text
@@ -71,10 +71,10 @@ class TappedOut(source.Source):
         commanders = []
         for tag in soup.select("div.board-col > h3"):
             if "Commander" in tag.text:
-                for card in tag.find_next_sibling("ul").select("span.card > a"):
+                for card in tag.find_next_sibling("ul").select("span > a"):
                     commanders.append(card.get("data-name"))
 
-        PAGE_TITLE_PREFIX = "MTG DECK: "
+        PAGE_TITLE_PREFIX = "MTG Deck: "
         name = (
             soup.find("meta", attrs={"property": "og:title"})
             .get("content")
@@ -86,18 +86,20 @@ class TappedOut(source.Source):
         ).get("content")
 
         return self.deck_to_generic_format(
-            mtga_deck, name, description, commanders
+            deck_id, mtga_deck, name, description, commanders
         )
 
     def age_string_to_timestamp(self, string):
         # No timestamp, so parse the string for an approximation
-        now = datetime.datetime.utcnow().timestamp()
+        now = utils.time_now()
         if string == "Updated a few seconds ago.":
             return now
-        elif m := re.match(
+
+        m = re.match(
             r"Updated (?P<n>\d+) (?P<unit>minute|hour|day|month|year)s? ago\.",
             string,
-        ):
+        )
+        if m:
             return now - int(m.group("n")) * {
                 "minute": 60,
                 "hour": 60 * 60,
@@ -156,7 +158,9 @@ class TappedOut(source.Source):
                         break
 
                 decks.append(
-                    source.DeckUpdate(self.format_deck_id(deck_id), updated)
+                    caching.DeckUpdate(
+                        caching.DeckDetails(deck_id, self.short), updated
+                    )
                 )
 
             i += 1

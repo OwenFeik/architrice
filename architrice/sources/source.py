@@ -2,8 +2,11 @@ import abc
 import dataclasses
 import logging
 
+from .. import caching
+from .. import database
 
-class Source(abc.ABC):
+
+class Source(database.KeyStoredObject, abc.ABC):
     # Abstract base class for deck sources, used to have common logging between
     # them.
     #
@@ -14,29 +17,20 @@ class Source(abc.ABC):
     # instantiated.
 
     def __init__(self, name, short):
+        database.KeyStoredObject.__init__(self, short)
+
         self.name = name
         self.short = short
 
-    def format_deck_id(self, deck_id):
-        """Return an id gauranteed to be unique across sources for this deck."""
-
-        # Because multiple sources use numeric ids, we might have collisions.
-        # By prepending the short form of the source name, collisions are
-        # prevented.
-        return f"{self.short}_{str(deck_id)}"
-
-    def unformat_deck_id(self, internal_deck_id):
-        """Convert a formatted deck id back to the source format."""
-
-        # Just need to slice off the source identifier character
-        return internal_deck_id[2:]
+    def create_deck(self, deck_id, name, description):
+        """Create a Deck with relevant information."""
+        return caching.Deck(deck_id, self.short, name, description)
 
     def _get_deck(self, deck_id):
         pass
 
-    def get_deck(self, internal_deck_id):
+    def get_deck(self, deck_id):
         """Download as `Deck` the deck with id `deck_id` from this source."""
-        deck_id = self.unformat_deck_id(internal_deck_id)
         deck = self._get_deck(deck_id)
         logging.info(f"Downloaded {self.name} deck {deck.name} (id: {deck_id})")
         return deck
@@ -64,7 +58,7 @@ class Source(abc.ABC):
         if latest:
             logging.info(
                 f"Latest deck for {self.name} user {username} "
-                f"has ID {latest.deck_id}."
+                f"has ID {latest.deck.deck_id}."
             )
         else:
             logging.info(
@@ -84,58 +78,3 @@ class Source(abc.ABC):
         else:
             logging.error("Verfification failed.")
         return result
-
-
-@dataclasses.dataclass
-class Card:
-    quantity: int
-    name: str
-    is_dfc: bool
-
-
-class Deck:
-    def __init__(self, name, description, **kwargs):
-        self.name = name
-        self.description = description
-        self.main = kwargs.get("main", [])
-        self.side = kwargs.get("side", [])
-        self.maybe = kwargs.get("maybe", [])
-        self.commanders = kwargs.get("commanders", [])
-
-    def get_main_deck(self, include_commanders=False):
-        if include_commanders:
-            return self.main + self.commanders
-        return self.main
-
-    def get_sideboard(self, include_commanders=True, include_maybe=True):
-        sideboard = self.side
-        if include_commanders:
-            sideboard += self.commanders
-        if include_maybe:
-            sideboard += self.maybe
-        return sideboard
-
-    def get_board(self, board, default="main"):
-        board = board.strip().lower()
-        if board == "commanders":
-            return self.commanders
-        elif board in ["maybe", "maybeboard"]:
-            return self.maybe
-        elif board in ["side", "sideboard"]:
-            return self.side
-        elif board in ["main", "maindeck", "mainboard"]:
-            return self.main
-        else:
-            return self.get_board(default)
-
-    def add_card(self, card, board):
-        self.get_board(board).append(card)
-
-    def add_cards(self, cards, board):
-        self.get_board(board).extend(cards)
-
-
-@dataclasses.dataclass
-class DeckUpdate:
-    deck_id: str  # ID of the deck within the relevant web service
-    updated: float  # UTC decimal timestamp of last updated time
