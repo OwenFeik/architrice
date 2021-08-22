@@ -91,10 +91,12 @@ class TappedOut(source.Source):
         now = utils.time_now()
         if string == "Updated a few seconds ago.":
             return now
-        elif m := re.match(
+
+        m = re.match(
             r"Updated (?P<n>\d+) (?P<unit>minute|hour|day|month|year)s? ago\.",
             string,
-        ):
+        )
+        if m:
             return now - int(m.group("n")) * {
                 "minute": 60,
                 "hour": 60 * 60,

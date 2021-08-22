@@ -87,7 +87,8 @@ class Deckstats(source.Source):
                 },
             ).json()
 
-            if folder := data.get("folder"):
+            folder = data.get("folder")
+            if folder:
                 for deck in folder.get("decks", []):
                     decks.append(
                         caching.DeckUpdate(

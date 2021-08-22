@@ -24,8 +24,8 @@ def get_choice(options, prompt, values=None):
 
         if choice in options:
             i = options.index(choice)
-        elif choice.isnumeric() and 0 <= (i := int(choice) - 1) < len(options):
-            pass
+        elif choice.isnumeric() and 0 < int(choice) <= len(options):
+            i = int(choice) - 1
         else:
             print(FAILURE_MESSAGE)
             continue
@@ -39,7 +39,9 @@ def get_decision(prompt, default=True):
     opts = (
         "(" + ("Y" if default else "y") + "/" + ("n" if default else "N") + ")"
     )
-    if (d := input(f"{prompt} {opts} {PROMPT}").strip().lower()) in [
+
+    d = input(f"{prompt} {opts} {PROMPT}").strip().lower()
+    if d in [
         "y",
         "yes",
     ]:
@@ -51,9 +53,10 @@ def get_decision(prompt, default=True):
 
 
 def get_string(prompt):
-    while not (string := input(f"{prompt} {PROMPT}")):
-        pass
-    return string.strip()
+    while True:
+        string = input(f"{prompt} {PROMPT}")
+        if string:
+            return string.strip()
 
 
 def get_path(prompt):

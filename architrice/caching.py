@@ -213,26 +213,26 @@ class OutputDir(database.StoredObject):
         return self.key(output, deck) in self.deck_files
 
     def deck_needs_updating(self, output, deck_update):
-        return deck_update and (  # update is non null and one of
-            not self.has_deck_file(
-                output, deck_update.deck
-            )  # it's never been downloaded
-            or not os.path.exists(
-                os.path.join(
-                    self.path,
-                    (
-                        deck_file := self.get_deck_file(
-                            output, deck_update.deck
-                        )
-                    ).file_name,
-                )
-            )  # or the file has been deleted
-            or deck_update.updated
-            > deck_file.updated  # or it's been updated at the source
-        )
+        if not deck_update:
+            return False
 
-    def store(self):
-        super().store()
+        # Newly tracked deck file
+        if not self.has_deck_file(output, deck_update.deck):
+            return True
+
+        deck_file = self.get_deck_file(output, deck_update.deck)
+
+        # Deck file was deleted
+        if not os.path.exists(os.path.join(self.path, deck_file.file_name)):
+            return True
+
+        # Deck has been updated at source
+        if deck_update.updated > deck_file.updated:
+            return True
+
+        return False
+
+    def store_deck_files(self):
         for deck_file in self.deck_files.values():
             deck_file.store()
 
@@ -333,7 +333,7 @@ class Output(database.StoredObject):
 
     def store(self):
         super().store()
-        self.output_dir.store()
+        self.output_dir.store_deck_files()
 
     def to_json(self):
         return {
@@ -431,6 +431,9 @@ class Profile(database.StoredObject):
             f"<Profile source={self.source.short} user={self.user} "
             f"name={self.name} outputs={self.outputs} id={self._id}>"
         )
+
+    def __str__(self):
+        return self.user_string
 
     @property
     def user_string(self):

@@ -49,10 +49,9 @@ def get_source(name, picker=False):
             return name
 
         try:
-            if source := sources.get(name):
-                return source
-        except ValueError:
-            logging.error(f"Invalid source name: {name}.")
+            return sources.get(name, True)
+        except ValueError as e:
+            logging.error(str(e))
     if picker:
         return source_picker()
     return None
@@ -72,10 +71,9 @@ def get_target(name, picker=False):
             return name
 
         try:
-            if target := targets.get(name):
-                return target
-        except ValueError:
-            logging.error(f"Invalid target name: {name}.")
+            return targets.get(name)
+        except ValueError as e:
+            logging.error(str(e))
     if picker:
         return target_picker()
     return None
@@ -220,7 +218,12 @@ def edit_profile_json(cache):
         edited_json["user"],
         edited_json["name"],
     )
-    cache.remove_profile(profile)
+
+    # In the case that the new profile is redundant wtih an existing profile,
+    # the same object is reused, so we don't want to remove it.
+    if new_profile is not profile:
+        cache.remove_profile(profile)
+
     for output in edited_json["outputs"]:
         cache.build_output(
             new_profile, targets.get(output["target"]), output["output_dir"]
@@ -270,15 +273,15 @@ def get_output_path(cache, interactive, target, path):
 
 def add_output(cache, interactive, profile, target=None, path=None):
     if profile is None:
-        if not (
-            profile := get_profile(
-                cache, interactive, "Add an output to which profile?"
-            )
-        ):
+        profile = get_profile(
+            cache, interactive, "Add an output to which profile?"
+        )
+        if not profile:
             logging.error("No profile specified. Unable to add output.")
             return
 
-    if not (target := get_target(target, interactive)):
+    target = get_target(target, interactive)
+    if not target:
         logging.error("No target specified. Unable to add output.")
         return
 
@@ -299,11 +302,13 @@ def add_profile(
     path=None,
     name=None,
 ):
-    if not (source := get_source(source, interactive)):
+    source = get_source(source, interactive)
+    if not source:
         logging.error("No source specified. Unable to add profile.")
         return
 
-    if not (user := get_verified_user(source, user, interactive)):
+    user = get_verified_user(source, user, interactive)
+    if not user:
         logging.error("No user provided. Unable to add profile.")
         return
 
@@ -333,7 +338,8 @@ def delete_profile(cache, interactive):
 
 
 def set_up_shortcuts(interactive, target):
-    if not (target or (target := get_target(None, interactive))):
+    target = get_target(target, interactive)
+    if not target:
         logging.info(
             "Unable to set up shortcuts as no target has been provided."
         )
