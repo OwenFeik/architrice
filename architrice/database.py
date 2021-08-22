@@ -136,6 +136,9 @@ class Database:
                     is_insert, cursor, cursor.execute(command, tup)
                 )
             except sqlite3.Error as e:
+                logging.debug(
+                    f"Database errored on command {command} with values {tup}"
+                )
                 logging.error(f"Database error: {str(e)}")
                 if utils.DEBUG:
                     traceback.print_stack()
@@ -147,6 +150,7 @@ class Database:
         try:
             return self.execute_ret(is_insert, cursor, cursor.execute(command))
         except sqlite3.Error as e:
+            logging.debug(f"Database errored on command {command}")
             logging.error(f"Database error: {str(e)}.")
             if utils.DEBUG:
                 traceback.print_stack()

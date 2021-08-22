@@ -477,9 +477,7 @@ def main():
     user = args.user and args.user.strip()
     path = utils.expand_path(args.path)
 
-    utils.set_up_logger(
-        0 if args.quiet else 2 if args.verbose else 1
-    )
+    utils.set_up_logger(0 if args.quiet else 2 if args.verbose else 1)
 
     if args.output:
         cache = caching.Cache.load(source, None, user, None, args.name)
