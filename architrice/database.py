@@ -442,6 +442,11 @@ class StoredObject:
                 },
             )
 
+    def delete_stored(self):
+        """If this object has been stored in the db, delete the record."""
+        if self._id:
+            delete(self.table, id=self._id)
+
 
 class DatabaseEvents(enum.Enum):
     CARD_LIST_UPDATE = 1

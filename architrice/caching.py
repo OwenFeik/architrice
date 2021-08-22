@@ -236,6 +236,18 @@ class OutputDir(database.StoredObject):
         for deck_file in self.deck_files.values():
             deck_file.store()
 
+    def remove_output(self, output):
+        """Delete all DeckFiles associated with an Output."""
+
+        to_delete = []
+
+        for k, v in self.deck_files.items():
+            if v.output is output:
+                to_delete.append(k)
+
+        for k in to_delete:
+            del self.deck_files[k]
+
     @staticmethod
     def get_all():
         for tup in database.select("output_dirs"):
@@ -334,6 +346,10 @@ class Output(database.StoredObject):
     def store(self):
         super().store()
         self.output_dir.store_deck_files()
+
+    def delete_stored(self):
+        super().delete_stored()
+        self.output_dir.remove_output(self)
 
     def to_json(self):
         return {
@@ -533,6 +549,11 @@ class Profile(database.StoredObject):
         for output in self.outputs:
             output.store()
 
+    def delete_stored(self):
+        for output in self.outputs:
+            output.delete_stored()
+        super().delete_stored()
+
     def to_json(self):
         return {
             "source": self.source.name,
@@ -568,8 +589,7 @@ class Cache:
 
     def remove_profile(self, profile):
         self.profiles.remove(profile)
-        if profile.id:
-            database.delete("profiles", id=profile.id)
+        profile.delete_stored()
         logging.info(f"Deleted profile for {profile.user_string}.")
 
     def build_profile(self, source, user, name):

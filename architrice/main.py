@@ -176,7 +176,9 @@ def verify_profile_json(data):
     if get_verified_user(source, data.get("user")) is None:
         return False
 
-    if "name" in data and not isinstance(data["name"], str):
+    if "name" in data and not (
+        data["name"] is None or isinstance(data["name"], str)
+    ):
         logging.error("Name must be a string.")
         return False
 
