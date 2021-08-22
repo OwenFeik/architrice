@@ -61,6 +61,9 @@ class TappedOut(source.Source):
         html = requests.get(
             f"{TappedOut.URL_BASE}mtg-decks/{deck_id}/"
         ).content.decode()
+
+        with open(utils.DATA_DIR + "/tmp.html", "w") as f:
+            f.write(html)
         soup = bs4.BeautifulSoup(html, "html.parser")
 
         mtga_deck = soup.find(attrs={"id": "mtga-textarea"}).text
@@ -68,7 +71,7 @@ class TappedOut(source.Source):
         commanders = []
         for tag in soup.select("div.board-col > h3"):
             if "Commander" in tag.text:
-                for card in tag.find_next_sibling("ul").select("span.card > a"):
+                for card in tag.find_next_sibling("ul").select("span > a"):
                     commanders.append(card.get("data-name"))
 
         PAGE_TITLE_PREFIX = "MTG Deck: "
