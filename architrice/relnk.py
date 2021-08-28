@@ -48,13 +48,14 @@ PS_COMMAND_SNIPPET = 'powershell -command "{}"'
 BATCH_FILE_NAME = "run_{}.bat"
 
 
-def create_batch_file(shortcut_name, client_path):
-    batch_file_path = os.path.join(
-        utils.DATA_DIR,
-        BATCH_FILE_NAME.format(
-            shortcut_name.replace(".lnk", "").lower()
-        ),  # e.g. Cockatrice.lnk => run_cockatrice.bat.
-    )
+def batch_file_name(shortcut_name):
+    return BATCH_FILE_NAME.format(
+        shortcut_name.replace(".lnk", "").lower()
+    )  # e.g. Cockatrice.lnk => run_cockatrice.bat.
+
+
+def create_batch_file(script_name, client_path):
+    batch_file_path = os.path.join(utils.DATA_DIR, script_name)
 
     if not os.path.exists(batch_file_path):
         with open(batch_file_path, "w") as f:
@@ -118,8 +119,9 @@ def relink_shortcuts(shortcut_name, confirm=False):
             ):
                 shortcut_path = os.path.join(path, shortcut_name)
                 shortcut_target = get_shortcut_target(shortcut_path)
-                if shortcut_target and not BATCH_FILE_NAME in shortcut_target:
+                script_name = batch_file_name(shortcut_name)
+                if shortcut_target and not script_name in shortcut_target:
                     script_path = create_batch_file(
-                        shortcut_name, shortcut_target
+                        script_name, shortcut_target
                     )
                     relink_shortcut(shortcut_path, script_path)
