@@ -26,6 +26,7 @@ class Source(database.KeyStoredObject, abc.ABC):
         """Create a Deck with relevant information."""
         return caching.Deck(deck_id, self.short, name, description)
 
+    @abc.abstractmethod
     def _get_deck(self, deck_id):
         pass
 
@@ -35,6 +36,7 @@ class Source(database.KeyStoredObject, abc.ABC):
         logging.info(f"Downloaded {self.name} deck {deck.name} (id: {deck_id})")
         return deck
 
+    @abc.abstractmethod
     def _get_deck_list(self, username):
         pass
 
@@ -66,6 +68,7 @@ class Source(database.KeyStoredObject, abc.ABC):
             )
         return latest
 
+    @abc.abstractmethod
     def _verify_user(self, username):
         pass
 
