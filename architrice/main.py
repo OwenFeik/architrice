@@ -360,19 +360,17 @@ def set_up_shortcuts(interactive, target):
     elif os.name == "posix":
         APP_PATH = f"/usr/bin/{APP_NAME}"
         if cli.get_decision(
-            f"Add script to run Cockatrice and {target.name} to path?"
+            f"Add script to run {target.name} to path?"
         ):
             script_path = os.path.join(utils.DATA_DIR, APP_NAME)
             with open(script_path, "w") as f:
                 f.write(
-                    f"{target.EXECUTABLE_NAME} > /dev/null 2>&1 &\n"
                     f"{sys.executable} -m {APP_NAME}\n"
                 )
             os.chmod(script_path, 0o755)
             subprocess.call(["sudo", "mv", script_path, APP_PATH])
             logging.info(
-                f'Running "{APP_NAME}" will now launch '
-                f"{target.name} and run {APP_NAME}."
+                f'Running "{APP_NAME}" will now run {APP_NAME}.'
             )
     else:
         logging.error("Unsupported operating system.")
