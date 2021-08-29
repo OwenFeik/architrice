@@ -1,11 +1,16 @@
-*.cod
-*.dek
-*.xml
-__pycache*
-*.egg-info
-*.log
-*/data/*
-env/*
-out/*
+# deck / log files
+**cod
+**dek
+**json
+**log
+**xml
+
+
+# build / test dirs
+**data*
+*egg-info
+__pycache__*
 .vscode
-*.json
+dist*
+env*
+out*
