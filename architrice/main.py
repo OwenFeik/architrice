@@ -149,6 +149,15 @@ def verify_output_json(output, i="\b"):
         logging.error(f"Output directory {i} already exists and is a file.")
         return False
 
+    if "include_maybe" in output:
+        if not isinstance(output["include_maybe"], bool):
+            logging.error(
+                "The include_maybe flag of an Output must be a string."
+            )
+            return False
+    else:
+        output["include_maybe"] = False
+
     return True
 
 
@@ -228,7 +237,10 @@ def edit_profile_json(cache):
 
     for output in edited_json["outputs"]:
         cache.build_output(
-            new_profile, targets.get(output["target"]), output["output_dir"]
+            new_profile,
+            targets.get(output["target"]),
+            output["output_dir"],
+            output["include_maybe"],
         )
     logging.info("Successfully updated profile.")
 
@@ -273,7 +285,9 @@ def get_output_path(cache, interactive, target, path):
     return path
 
 
-def add_output(cache, interactive, profile, target=None, path=None):
+def add_output(
+    cache, interactive, profile, target=None, path=None, include_maybe=None
+):
     if profile is None:
         profile = get_profile(
             cache, interactive, "Add an output to which profile?"
@@ -292,7 +306,12 @@ def add_output(cache, interactive, profile, target=None, path=None):
         logging.error("No path specified. Unable to add output.")
         return
 
-    cache.build_output(profile, target, path)
+    if include_maybe is None:
+        include_maybe = cli.get_decision(
+            "Include maybeboards in the decks downloaded?"
+        )
+
+    cache.build_output(profile, target, path, include_maybe)
 
 
 def add_profile(
@@ -302,6 +321,7 @@ def add_profile(
     target=None,
     user=None,
     path=None,
+    include_maybe=None,
     name=None,
 ):
     source = get_source(source, interactive)
@@ -319,13 +339,7 @@ def add_profile(
 
     profile = cache.build_profile(source, user, name)
 
-    add_output(
-        cache,
-        interactive,
-        profile,
-        target,
-        path,
-    )
+    add_output(cache, interactive, profile, target, path, include_maybe)
 
     return profile
 
@@ -359,19 +373,13 @@ def set_up_shortcuts(interactive, target):
         )
     elif os.name == "posix":
         APP_PATH = f"/usr/bin/{APP_NAME}"
-        if cli.get_decision(
-            f"Add script to run {target.name} to path?"
-        ):
+        if cli.get_decision(f"Add script to run {target.name} to path?"):
             script_path = os.path.join(utils.DATA_DIR, APP_NAME)
             with open(script_path, "w") as f:
-                f.write(
-                    f"{sys.executable} -m {APP_NAME}\n"
-                )
+                f.write(f"{sys.executable} -m {APP_NAME}\n")
             os.chmod(script_path, 0o755)
             subprocess.call(["sudo", "mv", script_path, APP_PATH])
-            logging.info(
-                f'Running "{APP_NAME}" will now run {APP_NAME}.'
-            )
+            logging.info(f'Running "{APP_NAME}" will now run {APP_NAME}.')
     else:
         logging.error("Unsupported operating system.")
 
@@ -392,6 +400,14 @@ def parse_args():
     )
     parser.add_argument(
         "-p", "--path", dest="path", help="set deck file output directory"
+    )
+    parser.add_argument(
+        "-m",
+        "--maybeboard",
+        dest="include_maybe",
+        help="include maybeboard in output sideboard",
+        nargs="?",
+        const=1,
     )
     parser.add_argument("-n", "--name", dest="name", help="set profile name")
     parser.add_argument(
@@ -474,15 +490,18 @@ def main():
     target = targets.get(args.target)
     user = args.user and args.user.strip()
     path = utils.expand_path(args.path)
+    include_maybe = args.include_maybe and bool(args.include_maybe)
 
     utils.set_up_logger(
         0 if args.quiet else args.verbosity + 1 if args.verbosity else 1
     )
 
     if args.output:
-        cache = caching.Cache.load(source, None, user, None, args.name)
+        cache = caching.Cache.load(source, None, user, None, None, args.name)
     else:
-        cache = caching.Cache.load(source, target, user, path, args.name)
+        cache = caching.Cache.load(
+            source, target, user, path, include_maybe, args.name
+        )
 
     if args.relink:
         set_up_shortcuts(args.interactive, target)
@@ -496,11 +515,18 @@ def main():
             set_up_shortcuts(args.interactive, profile.outputs[0].target)
     elif args.add:
         add_profile(
-            cache, args.interactive, source, target, user, path, args.name
+            cache,
+            args.interactive,
+            source,
+            target,
+            user,
+            path,
+            include_maybe,
+            args.name,
         )
 
     if args.output:
-        add_output(cache, args.interactive, None, target, path)
+        add_output(cache, args.interactive, None, target, path, include_maybe)
 
     if args.delete:
         delete_profile(cache, args.interactive)

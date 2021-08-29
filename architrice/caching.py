@@ -283,10 +283,13 @@ class OutputDir(database.StoredObject):
 
 
 class Output(database.StoredObject):
-    def __init__(self, target, output_dir, profile=None, db_id=None):
+    def __init__(
+        self, target, output_dir, include_maybe=False, profile=None, db_id=None
+    ):
         super().__init__("outputs", db_id)
         self.target: targets.target.Target = target
         self.output_dir: OutputDir = output_dir
+        self.include_maybe: bool = include_maybe or False
         self.profile: Profile = profile  # Needed for FK in db
 
     def __hash__(self):
@@ -355,12 +358,15 @@ class Output(database.StoredObject):
         return {
             "target": self.target.name,
             "output_dir": self.output_dir.path,
+            "include_maybe": self.include_maybe,
         }
 
     @staticmethod
     def from_json(data):
         return Output(
-            targets.get(data["target"], True), OutputDir.get(data["output_dir"])
+            targets.get(data["target"], True),
+            OutputDir.get(data["output_dir"]),
+            data["include_maybe"],
         )
 
 
@@ -595,8 +601,8 @@ class Cache:
     def build_profile(self, source, user, name):
         return self.add_profile(Profile(User.get(user, source), name, []))
 
-    def build_output(self, profile, target, path):
-        profile.add_output(Output(target, OutputDir.get(path)))
+    def build_output(self, profile, target, path, include_maybe):
+        profile.add_output(Output(target, OutputDir.get(path), include_maybe))
 
     def save(self):
         logging.debug("Saving cache to database.")
@@ -613,7 +619,14 @@ class Cache:
         database.close()
 
     @staticmethod
-    def load(source=None, target=None, user=None, path=None, name=None):
+    def load(
+        source=None,
+        target=None,
+        user=None,
+        path=None,
+        include_maybe=None,
+        name=None,
+    ):
         """Load all relevant data into memory from the database."""
         database.init()
 
@@ -646,8 +659,15 @@ class Cache:
                 "outputs",
                 target=getattr(target, "short", None),
                 profile=profile_db_id,
+                include_maybe=include_maybe,
             ):
-                output_db_id, output_target, output_dir_id, _ = tup
+                (
+                    output_db_id,
+                    output_target,
+                    output_dir_id,
+                    _,
+                    output_include_maybe,
+                ) = tup
 
                 for output_dir in output_dirs:
                     if output_dir.id == output_dir_id:
@@ -660,6 +680,7 @@ class Cache:
                 output = Output(
                     targets.get(output_target),
                     output_dir,
+                    bool(output_include_maybe),
                     db_id=output_db_id,
                 )
                 outputs.append(output)

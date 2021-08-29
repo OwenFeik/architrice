@@ -12,7 +12,7 @@ DATABASE_FILE = "architrice.db"
 
 
 class Database:
-    USER_VERSION = 0
+    USER_VERSION = 1
 
     def __init__(self, tables=None):
         self.conn = None
@@ -37,6 +37,19 @@ class Database:
                 self.add_table(table, initial_setup)
 
         self.tables_to_init = None
+
+        # execute returns a cursor, which becomes a list of tuples,
+        # the first of which is (version,).
+        version = list(self.execute("PRAGMA user_version;"))[0][0]
+        
+        self.migrate(version)
+
+    def migrate(self, version):
+        """Update the database schema if necessary."""
+
+        if version == 0:
+            self.execute("ALTER TABLE outputs ADD COLUMN include_maybe INTEGER")
+            self.execute("PRAGMA user_version = 1;")
 
     def add_table(self, table, create=False):
         """Add a Table to the database, creating it if necessary."""
@@ -499,6 +512,7 @@ database = Database(
                 Column(
                     "profile", "INTEGER", references="profiles", not_null=True
                 ),
+                Column("include_maybe", "INTEGER")
             ],
             ["UNIQUE(target, output_dir, profile)"],
         ),
