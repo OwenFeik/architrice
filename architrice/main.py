@@ -39,7 +39,7 @@ Replace -a with -d to delete instead of creating.
 
 To skip updating decklists while using other functionality, include the -k flag.
 
-To add shortcuts to launch {APP_NAME} alongside Cockatrice, run {APP_NAME} -r.
+To add shortcuts to launch {APP_NAME}, run {APP_NAME} -r.
 """
 
 
