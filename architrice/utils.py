@@ -13,7 +13,7 @@ def get_data_dir():
         return os.path.join(os.path.dirname(__file__), "data")
 
     if os.name == "nt":
-        return os.path.join(os.getenv("LOCALAPPDATA", "architrice"))
+        return os.path.join(os.getenv("LOCALAPPDATA"), "architrice")
     else:
         DATA_HOME_ENV_VAR = "XDG_DATA_HOME"
         DATA_HOME_FALLBACK = "~/.local/share"

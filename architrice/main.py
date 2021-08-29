@@ -425,6 +425,20 @@ def parse_args():
         action="store_true",
     )
     parser.add_argument(
+        "-o",
+        "--output",
+        dest="output",
+        action="store_true",
+        help="add an output to a profile",
+    )
+    parser.add_argument(
+        "-e",
+        "--edit",
+        dest="edit",
+        action="store_true",
+        help="edit a profile as JSON",
+    )
+    parser.add_argument(
         "-l",
         "--latest",
         dest="latest",
@@ -433,8 +447,8 @@ def parse_args():
     )
     parser.add_argument(
         "-v",
-        "--verbosity",
-        dest="verbosity",
+        "--verbose",
+        dest="verbose",
         action="count",
         help="increase output verbosity",
     )
@@ -466,20 +480,6 @@ def parse_args():
         action="store_true",
         help="create shortcuts for architrice",
     )
-    parser.add_argument(
-        "-o",
-        "--output",
-        dest="output",
-        action="store_true",
-        help="add an output to a profile",
-    )
-    parser.add_argument(
-        "-e",
-        "--edit",
-        dest="edit",
-        action="store_true",
-        help="edit a profile as JSON",
-    )
 
     return parser.parse_args()
 
@@ -492,9 +492,7 @@ def main():
     path = utils.expand_path(args.path)
     include_maybe = args.include_maybe and bool(args.include_maybe)
 
-    utils.set_up_logger(
-        0 if args.quiet else args.verbosity + 1 if args.verbosity else 1
-    )
+    utils.set_up_logger(0 if args.quiet else 2 if args.verbose else 1)
 
     if args.output:
         cache = caching.Cache.load(source, None, user, None, None, args.name)
