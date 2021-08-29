@@ -122,6 +122,10 @@ class Database:
         """DELETE FROM table WHERE kwarg keys = kwarg values"""
         self.tables[table].delete(**kwargs)
 
+    def update(self, table, updates, where):
+        """UPDATE table SET updates WHERE where"""
+        self.tables[table].update(updates, where)
+
     def execute_ret(self, is_insert, cursor, result):
         if is_insert:
             if cursor.rowcount:
@@ -155,8 +159,7 @@ class Database:
                 logging.error(f"Database error: {str(e)}")
                 if utils.DEBUG:
                     traceback.print_stack()
-                    exit()
-                return None if is_insert else []
+                exit()
 
         if self.log:
             logging.debug(f"Executing database command: {command}")
@@ -167,8 +170,7 @@ class Database:
             logging.error(f"Database error: {str(e)}.")
             if utils.DEBUG:
                 traceback.print_stack()
-                exit()
-            return None if is_insert else []
+            exit()
 
     def execute_many(self, command, tups):
         """Execute many SQL commands."""
@@ -413,6 +415,24 @@ class Table:
             arguments,
         )
 
+    def update(self, updates, where):
+        where_string, arguments = self.common_where_handling(**where)
+
+        update_args = []
+        update_strings = []
+        for k, v in updates.items():
+            update_strings.append(f"{k} = ?")
+            update_args.append(v)
+        
+        arguments = update_args + arguments
+
+        self.db.execute(
+            f"UPDATE {self.name} SET "
+            + ", ".join(update_strings)
+            + where_string
+            + ";",
+            arguments
+        )
 
 class KeyStoredObject:
     # Singletons like Sources or Targets which are referred in the database
@@ -452,22 +472,34 @@ class StoredObject:
 
     def store(self):
         """Store this object in the database."""
+
         kwargs = {}
         for column in database.tables[self.table].columns:
             kwargs[column.name] = self.get_value(column.name)
-        insert_id = upsert(self.table, **kwargs)
-        if insert_id:
-            self._id = insert_id
-        elif not self._id:
-            self._id = select_one_column(
-                self.table,
-                "id",
-                **{
+
+        if self._id:
+            update(
+                self.table, {
                     column.name: self.get_value(column.name)
                     for column in database.tables[self.table].columns
                     if column.name != "id"
                 },
+                { "id": self._id }
             )
+        else:
+            insert_id = upsert(self.table, **kwargs)
+            if insert_id:
+                self._id = insert_id
+            elif not self._id:
+                self._id = select_one_column(
+                    self.table,
+                    "id",
+                    **{
+                        column.name: self.get_value(column.name)
+                        for column in database.tables[self.table].columns
+                        if column.name != "id"
+                    },
+                )
 
     def delete_stored(self):
         """If this object has been stored in the db, delete the record."""
@@ -596,6 +628,7 @@ select_one = database.select_one
 select_one_column = database.select_one_column
 select_ignore_none = database.select_ignore_none
 delete = database.delete
+update = database.update
 execute = database.execute
 commit = database.commit
 close = database.close
