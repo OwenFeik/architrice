@@ -48,6 +48,7 @@ class Database:
         """Update the database schema if necessary."""
 
         if version == 0:
+            logging.debug("Migrating database from version 0 to version 1.")
             self.execute("ALTER TABLE outputs ADD COLUMN include_maybe INTEGER")
             self.execute("PRAGMA user_version = 1;")
 
@@ -479,7 +480,8 @@ class StoredObject:
 
         if self._id:
             update(
-                self.table, {
+                self.table,
+                {
                     column.name: self.get_value(column.name)
                     for column in database.tables[self.table].columns
                     if column.name != "id"
@@ -644,6 +646,7 @@ def init():
     utils.ensure_data_dir()
     database.init(database_file, initial_setup)
 
+    disable_logging()
     from . import sources
 
     for source in sources.sourcelist:
@@ -657,5 +660,6 @@ def init():
         insert(
             "targets", conflict="ignore", short=target.SHORT, name=target.NAME
         )
+    enable_logging()
 
     commit()

@@ -105,7 +105,7 @@ class Deck(DeckDetails):
         return self.main
 
     def get_sideboard(self, include_commanders=True, include_maybe=True):
-        sideboard = self.side
+        sideboard = self.side[:]
         if include_commanders:
             sideboard += self.commanders
         if include_maybe:
@@ -324,6 +324,7 @@ class Output(database.StoredObject):
             os.path.join(
                 self.output_dir.path, self.get_updated_deck_file(deck).file_name
             ),
+            self.include_maybe,
         )
 
     def save_decks(self, decks):
@@ -334,7 +335,7 @@ class Output(database.StoredObject):
                 (deck, os.path.join(self.output_dir.path, deck_file.file_name))
             )
 
-        self.target.save_decks(deck_tuples)
+        self.target.save_decks(deck_tuples, self.include_maybe)
 
     def deck_needs_updating(self, deck_update):
         return self.output_dir.deck_needs_updating(self, deck_update)

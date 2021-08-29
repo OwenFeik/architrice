@@ -38,7 +38,7 @@ class XMage(target.Target):
 
         return card_list_string
 
-    def save_deck(self, deck, path, card_info_map=None):
+    def save_deck(self, deck, path, include_maybe=False, card_info_map=None):
         # XMage decks have the following format:
         #
         # QTY [SET:COLLECTOR_NUMBER] CARD_NAME
@@ -58,7 +58,9 @@ class XMage(target.Target):
 
         deck_string = self.format_card_list(
             card_info_map, deck.get_main_deck()
-        ) + self.format_card_list(card_info_map, deck.get_sideboard(), True)
+        ) + self.format_card_list(
+            card_info_map, deck.get_sideboard(include_maybe=include_maybe), True
+        )
 
         with open(path, "w") as f:
             f.write(deck_string)

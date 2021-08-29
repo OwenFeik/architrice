@@ -16,17 +16,17 @@ class Generic(target.Target):
             False,
         )
 
-    def save_deck(self, deck, path):
+    def save_deck(self, deck, path, include_maybe):
         deck_string = ""
         for quantity, name in deck.get_main_deck():
             deck_string += f"{quantity} {name}\n"
         deck_string += "\n"
-        for quantity, name in deck.get_sideboard():
+        for quantity, name in deck.get_sideboard(include_maybe=include_maybe):
             deck_string += f"{quantity} {name}\n"
 
         with open(path, "w") as f:
             f.write(deck_string)
 
-    def save_decks(self, deck_tuples):
+    def save_decks(self, deck_tuples, include_maybe):
         for deck, path in deck_tuples:
-            self.save_deck(deck, path)
+            self.save_deck(deck, path, include_maybe)

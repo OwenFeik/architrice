@@ -7,6 +7,8 @@ import os
 import subprocess
 import sys
 
+import architrice
+
 from . import caching
 from . import cli
 from . import database
@@ -447,10 +449,10 @@ def parse_args():
     )
     parser.add_argument(
         "-v",
-        "--verbose",
-        dest="verbose",
-        action="count",
-        help="increase output verbosity",
+        "--version",
+        dest="version",
+        action="store_true",
+        help="print version and exit",
     )
     parser.add_argument(
         "-q",
@@ -492,7 +494,11 @@ def main():
     path = utils.expand_path(args.path)
     include_maybe = args.include_maybe and bool(args.include_maybe)
 
-    utils.set_up_logger(0 if args.quiet else 2 if args.verbose else 1)
+    utils.set_up_logger(0 if args.quiet else 1)
+
+    if args.version:
+        print(architrice.__version__)
+        exit()
 
     if args.output:
         cache = caching.Cache.load(source, None, user, None, None, args.name)
@@ -526,9 +532,6 @@ def main():
     if args.output:
         add_output(cache, args.interactive, None, target, path, include_maybe)
 
-    if args.delete:
-        delete_profile(cache, args.interactive)
-
     if args.edit:
         if not args.interactive:
             logging.info(
@@ -536,6 +539,10 @@ def main():
             )
         else:
             edit_profile_json(cache)
+
+    if args.delete:
+        delete_profile(cache, args.interactive)
+        exit()
 
     if not args.skip_update:
         for profile in cache.profiles:

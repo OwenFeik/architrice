@@ -52,12 +52,12 @@ first letter. For example `G` instead of `Generic` when specifying a target.
 Flags to modify behaviour:
 
 * `-a` (`--add`) : add a new profile.
-* `-d` (`--delete`) : delete an existing profile.
+* `-d` (`--delete`) : delete an existing profile and exit.
 * `-o` (`--output`) : add an output to an existing profile.
 * `-e` (`--edit`) : edit an existing profile as JSON.
 * `-l` (`--latest`) : download only the most recently updated deck for each
     profile.
-* `-v` (`--verbose`) : show more information.
+* `-v` (`--version`) : print Architrice version and exit.
 * `-q` (`--quiet`) : disable output to terminal.
 * `-i` (`--non-interactive`) : prevent input prompts, for scripting.
 * `-k` (`--skip-update`) : don't update decks on this run.

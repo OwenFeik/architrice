@@ -9,7 +9,6 @@ from . import target
 
 
 class Mtgo(target.Target):
-    SUPPORTED_OS = ["nt"]
     NAME = "MTGO"
     SHORT = "M"
     DECK_DIRECTORYS = (
@@ -50,10 +49,10 @@ class Mtgo(target.Target):
                 return directory
         return super().suggest_directory()
 
-    def save_deck(self, deck, path, card_info_map=None):
+    def save_deck(self, deck, path, include_maybe, card_info_map=None):
         if card_info_map is None:
             card_info_map = card_info.map_from_deck(deck, mtgo_id_required=True)
-        return deck_to_xml(deck, path, card_info_map)
+        return deck_to_xml(deck, path, include_maybe, card_info_map)
 
 
 def mtgo_name(name):
@@ -80,7 +79,7 @@ def add_card(root, quantity, name, card_info_map, in_sideboard=False):
         )
 
 
-def deck_to_xml(deck, outfile, card_info_map):
+def deck_to_xml(deck, outfile, include_maybe, card_info_map):
     root = et.Element(
         "Deck",
         {
@@ -94,7 +93,7 @@ def deck_to_xml(deck, outfile, card_info_map):
 
     for quantity, name in deck.get_main_deck():
         add_card(root, quantity, name, card_info_map)
-    for quantity, name in deck.get_sideboard():
+    for quantity, name in deck.get_sideboard(include_maybe=include_maybe):
         add_card(root, quantity, name, card_info_map, True)
 
     et.ElementTree(root).write(outfile, xml_declaration=True, encoding="utf-8")
