@@ -5,9 +5,7 @@ from .generic import Generic
 from .mtgo import Mtgo
 from .xmage import XMage
 
-targetlist = [
-    t for t in [Cockatrice, Generic, Mtgo, XMage] if os.name in t.SUPPORTED_OS
-]
+targetlist = [Cockatrice, Generic, Mtgo, XMage]
 
 # singleton cache; sources have no data so only a single instance is required
 _targets = {}

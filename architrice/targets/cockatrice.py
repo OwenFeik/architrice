@@ -34,19 +34,19 @@ class Cockatrice(target.Target):
     def suggest_directory(self):
         return Cockatrice.DECK_DIRECTORY
 
-    def save_deck(self, deck, path):
-        deck_to_xml(deck, path)
+    def save_deck(self, deck, path, include_maybe):
+        deck_to_xml(deck, path, include_maybe)
 
-    def save_decks(self, deck_tuples):
+    def save_decks(self, deck_tuples, include_maybe):
         for deck, path in deck_tuples:
-            self.save_deck(deck, path)
+            self.save_deck(deck, path, include_maybe)
 
 
 def cockatrice_name(name):
     return name.partition("//")[0].strip()
 
 
-def deck_to_xml(deck, outfile):
+def deck_to_xml(deck, outfile, include_maybe):
     root = et.Element("cockatrice_deck", version="1")
 
     et.SubElement(root, "deckname").text = deck.name
@@ -59,7 +59,7 @@ def deck_to_xml(deck, outfile):
         et.SubElement(
             main, "card", number=str(quantity), name=cockatrice_name(name)
         )
-    for quantity, name in deck.get_sideboard():
+    for quantity, name in deck.get_sideboard(include_maybe=include_maybe):
         et.SubElement(
             side, "card", number=str(quantity), name=cockatrice_name(name)
         )

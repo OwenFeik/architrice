@@ -12,7 +12,7 @@ DATABASE_FILE = "architrice.db"
 
 
 class Database:
-    USER_VERSION = 0
+    USER_VERSION = 1
 
     def __init__(self, tables=None):
         self.conn = None
@@ -37,6 +37,20 @@ class Database:
                 self.add_table(table, initial_setup)
 
         self.tables_to_init = None
+
+        # execute returns a cursor, which becomes a list of tuples,
+        # the first of which is (version,).
+        version = list(self.execute("PRAGMA user_version;"))[0][0]
+        
+        self.migrate(version)
+
+    def migrate(self, version):
+        """Update the database schema if necessary."""
+
+        if version == 0:
+            logging.debug("Migrating database from version 0 to version 1.")
+            self.execute("ALTER TABLE outputs ADD COLUMN include_maybe INTEGER")
+            self.execute("PRAGMA user_version = 1;")
 
     def add_table(self, table, create=False):
         """Add a Table to the database, creating it if necessary."""
@@ -109,6 +123,10 @@ class Database:
         """DELETE FROM table WHERE kwarg keys = kwarg values"""
         self.tables[table].delete(**kwargs)
 
+    def update(self, table, updates, where):
+        """UPDATE table SET updates WHERE where"""
+        self.tables[table].update(updates, where)
+
     def execute_ret(self, is_insert, cursor, result):
         if is_insert:
             if cursor.rowcount:
@@ -142,8 +160,7 @@ class Database:
                 logging.error(f"Database error: {str(e)}")
                 if utils.DEBUG:
                     traceback.print_stack()
-                    exit()
-                return None if is_insert else []
+                exit()
 
         if self.log:
             logging.debug(f"Executing database command: {command}")
@@ -154,8 +171,7 @@ class Database:
             logging.error(f"Database error: {str(e)}.")
             if utils.DEBUG:
                 traceback.print_stack()
-                exit()
-            return None if is_insert else []
+            exit()
 
     def execute_many(self, command, tups):
         """Execute many SQL commands."""
@@ -269,7 +285,10 @@ class Table:
         return update_columns
 
     def create_upsert_string(self, column_names, arguments):
-        conflict_string = ""
+        # Note:
+        # sqlite only supports a single on conflict term, so this prioritises
+        # first multi-column unique statements, then unique columns and finally
+        # primary keys.
 
         for c in self.constraints:
             if "UNIQUE" in c:
@@ -279,7 +298,7 @@ class Table:
 
                 # Only handle conflicts in columns which could actually occur
                 if any(c in column_names for c in conflict_columns):
-                    conflict_string += self.on_conflict_update_string(
+                    return self.on_conflict_update_string(
                         conflict_columns,
                         self.update_columns(
                             conflict_columns, column_names, arguments
@@ -287,13 +306,20 @@ class Table:
                     )
 
         for c in self.columns:
-            if (c.unique or c.primary_key) and c.name in column_names:
-                conflict_string += self.on_conflict_update_string(
+            if c.unique and c.name in column_names:
+                return self.on_conflict_update_string(
                     [c.name],
                     self.update_columns([c.name], column_names, arguments),
                 )
 
-        return conflict_string
+        for c in self.columns:
+            if c.primary_key and c.name in column_names:
+                return self.on_conflict_update_string(
+                    [c.name],
+                    self.update_columns([c.name], column_names, arguments),
+                )
+
+        return ""
 
     def insert_command(self, column_names, arguments, conflict=None):
         substitution_string = self.substitution_string(arguments)
@@ -390,6 +416,24 @@ class Table:
             arguments,
         )
 
+    def update(self, updates, where):
+        where_string, arguments = self.common_where_handling(**where)
+
+        update_args = []
+        update_strings = []
+        for k, v in updates.items():
+            update_strings.append(f"{k} = ?")
+            update_args.append(v)
+        
+        arguments = update_args + arguments
+
+        self.db.execute(
+            f"UPDATE {self.name} SET "
+            + ", ".join(update_strings)
+            + where_string
+            + ";",
+            arguments
+        )
 
 class KeyStoredObject:
     # Singletons like Sources or Targets which are referred in the database
@@ -429,22 +473,35 @@ class StoredObject:
 
     def store(self):
         """Store this object in the database."""
+
         kwargs = {}
         for column in database.tables[self.table].columns:
             kwargs[column.name] = self.get_value(column.name)
-        insert_id = upsert(self.table, **kwargs)
-        if insert_id:
-            self._id = insert_id
-        elif not self._id:
-            self._id = select_one_column(
+
+        if self._id:
+            update(
                 self.table,
-                "id",
-                **{
+                {
                     column.name: self.get_value(column.name)
                     for column in database.tables[self.table].columns
                     if column.name != "id"
                 },
+                { "id": self._id }
             )
+        else:
+            insert_id = upsert(self.table, **kwargs)
+            if insert_id:
+                self._id = insert_id
+            elif not self._id:
+                self._id = select_one_column(
+                    self.table,
+                    "id",
+                    **{
+                        column.name: self.get_value(column.name)
+                        for column in database.tables[self.table].columns
+                        if column.name != "id"
+                    },
+                )
 
     def delete_stored(self):
         """If this object has been stored in the db, delete the record."""
@@ -503,6 +560,7 @@ database = Database(
                 Column(
                     "profile", "INTEGER", references="profiles", not_null=True
                 ),
+                Column("include_maybe", "INTEGER")
             ],
             ["UNIQUE(target, output_dir, profile)"],
         ),
@@ -572,6 +630,7 @@ select_one = database.select_one
 select_one_column = database.select_one_column
 select_ignore_none = database.select_ignore_none
 delete = database.delete
+update = database.update
 execute = database.execute
 commit = database.commit
 close = database.close
@@ -587,6 +646,7 @@ def init():
     utils.ensure_data_dir()
     database.init(database_file, initial_setup)
 
+    disable_logging()
     from . import sources
 
     for source in sources.sourcelist:
@@ -600,5 +660,6 @@ def init():
         insert(
             "targets", conflict="ignore", short=target.SHORT, name=target.NAME
         )
+    enable_logging()
 
     commit()
