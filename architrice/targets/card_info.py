@@ -73,6 +73,8 @@ def update_card_list():
         "vanguard",
     ]
 
+    dfc_layouts = ["meld", "modal_dfc", "transform"]
+
     # Tuple format:
     # (name, mtgo_id, is_dfc, collector_number, edition, reprint)
 
@@ -88,7 +90,7 @@ def update_card_list():
             (
                 card["name"],
                 card.get("mtgo_id"),
-                "card_faces" in card,
+                card["layout"] in dfc_layouts,
                 card["collector_number"],
                 card["set"],
                 card["reprint"],
@@ -158,7 +160,7 @@ def find(name, mtgo_id_required=False, update_if_necessary=True):
             name, mtgo_id_required=mtgo_id_required, update_if_necessary=False
         )
     else:
-        logging.debug(f"Unable to find suitable card info for {name}.")
+        logging.error(f"Unable to find card info for {name}.")
         return None
 
 

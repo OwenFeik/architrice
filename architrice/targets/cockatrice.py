@@ -1,3 +1,4 @@
+from architrice.targets.card_info import CARD_LIST_UPDATE_INTERVAL
 import os
 import xml.etree.cElementTree as et
 
@@ -28,25 +29,29 @@ class Cockatrice(target.Target):
             Cockatrice.NAME,
             Cockatrice.SHORT,
             Cockatrice.DECK_FILE_EXTENSION,
-            False,
+            True,
         )
 
     def suggest_directory(self):
         return Cockatrice.DECK_DIRECTORY
 
-    def save_deck(self, deck, path, include_maybe):
-        deck_to_xml(deck, path, include_maybe)
-
-    def save_decks(self, deck_tuples, include_maybe):
-        for deck, path in deck_tuples:
-            self.save_deck(deck, path, include_maybe)
+    def save_deck(self, deck, path, include_maybe=False, card_info_map=None):
+        deck_to_xml(deck, path, include_maybe, card_info_map)
 
 
-def cockatrice_name(name):
+def front_face_name(name):
     return name.partition("//")[0].strip()
 
 
-def deck_to_xml(deck, outfile, include_maybe):
+def cockatrice_name(name, card_info_map):
+    if name in card_info_map:
+        card = card_info_map[name]
+        if card and card.is_dfc:
+            return front_face_name(name)
+    return name
+
+
+def deck_to_xml(deck, outfile, include_maybe, card_info_map=None):
     root = et.Element("cockatrice_deck", version="1")
 
     et.SubElement(root, "deckname").text = deck.name
@@ -57,11 +62,17 @@ def deck_to_xml(deck, outfile, include_maybe):
 
     for quantity, name in deck.get_main_deck():
         et.SubElement(
-            main, "card", number=str(quantity), name=cockatrice_name(name)
+            main,
+            "card",
+            number=str(quantity),
+            name=cockatrice_name(name, card_info_map),
         )
     for quantity, name in deck.get_sideboard(include_maybe=include_maybe):
         et.SubElement(
-            side, "card", number=str(quantity), name=cockatrice_name(name)
+            side,
+            "card",
+            number=str(quantity),
+            name=cockatrice_name(name, card_info_map),
         )
 
     et.ElementTree(root).write(outfile, xml_declaration=True, encoding="UTF-8")

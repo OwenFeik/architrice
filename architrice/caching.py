@@ -31,7 +31,7 @@ class Card(database.StoredObject):
         return (
             f"<Card name={self.name} mtgo_id={self.mtgo_id} "
             f"is_dfc={self.is_dfc} collector_number={self.collector_number} "
-            f"edition={self.edition} id={self.id}>"
+            f"edition={self.edition} id={self._id}>"
         )
 
     @staticmethod
@@ -51,11 +51,6 @@ class DeckDetails(database.StoredObject):
         super().__init__("decks", db_id)
         self.deck_id: str = deck_id
         self.source: str = source
-
-        if deck_id == source == None:
-            import traceback
-
-            traceback.print_stack()
 
     def __hash__(self):
         return hash((self.deck_id, self.source))
