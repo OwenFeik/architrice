@@ -16,7 +16,7 @@ from . import sources
 from . import targets
 from . import utils
 
-APP_NAME = "architrice"
+APP_NAME = utils.APP_NAME
 
 DESCRIPTION = f"""
 {APP_NAME} is a tool to download decks from online sources to local directories.
@@ -67,26 +67,7 @@ def source_picker():
     )()
 
 
-def get_target(name, picker=False):
-    if name is not None:
-        if not isinstance(name, str):
-            return name
 
-        try:
-            return targets.get(name)
-        except ValueError as e:
-            logging.error(str(e))
-    if picker:
-        return target_picker()
-    return None
-
-
-def target_picker():
-    return cli.get_choice(
-        [t.NAME for t in targets.targetlist],
-        "For which supported MtG client?",
-        targets.targetlist,
-    )()
 
 
 def get_profile(cache, interactive, prompt="Choose a profile"):
@@ -356,34 +337,6 @@ def delete_profile(cache, interactive):
 
 
 def set_up_shortcuts(interactive, target):
-    target = get_target(target, interactive)
-    if not target:
-        logging.info(
-            "Unable to set up shortcuts as no target has been provided."
-        )
-        return
-
-    if not target.SUPPORTS_RELNK:
-        logging.info("This target doesn't support shortcut configuration.")
-
-    if os.name == "nt":
-        from . import relnk
-
-        relnk.relink_shortcuts(
-            target.SHORTCUT_NAME,
-            not cli.get_decision("Automatically update all shortcuts?"),
-        )
-    elif os.name == "posix":
-        APP_PATH = f"/usr/bin/{APP_NAME}"
-        if cli.get_decision(f"Add script to run {target.name} to path?"):
-            script_path = os.path.join(utils.DATA_DIR, APP_NAME)
-            with open(script_path, "w") as f:
-                f.write(f"{sys.executable} -m {APP_NAME}\n")
-            os.chmod(script_path, 0o755)
-            subprocess.call(["sudo", "mv", script_path, APP_PATH])
-            logging.info(f'Running "{APP_NAME}" will now run {APP_NAME}.')
-    else:
-        logging.error("Unsupported operating system.")
 
 
 def parse_args():
@@ -493,6 +446,9 @@ def main():
     user = args.user and args.user.strip()
     path = utils.expand_path(args.path)
     include_maybe = args.include_maybe and bool(args.include_maybe)
+
+    print(args)
+    exit()
 
     utils.set_up_logger(0 if args.quiet else 1)
 

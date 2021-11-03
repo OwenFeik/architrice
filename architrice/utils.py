@@ -5,6 +5,8 @@ import os
 import re
 import sys
 
+
+APP_NAME = "architrice"
 DEBUG = False
 
 
