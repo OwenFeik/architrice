@@ -141,7 +141,7 @@ def relink_shortcuts(shortcut_name, confirm=False):
 
 class Relnk(mode.Mode):
     def __init__(self):
-        super().__init__(["target"])
+        super().__init__("r", "relink", ["target"])
 
     def main(args):
         if os.name == "nt":
@@ -158,7 +158,7 @@ class Relnk(mode.Mode):
 
             from . import relnk
 
-            relnk.relink_shortcuts(
+            relink_shortcuts(
                 target.SHORTCUT_NAME,
                 not cli.get_decision("Automatically update all shortcuts?"),
             )

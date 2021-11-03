@@ -9,6 +9,8 @@ import sys
 
 import architrice
 
+from . import modes
+
 from . import caching
 from . import cli
 from . import database
@@ -337,75 +339,40 @@ def delete_profile(cache, interactive):
 
 
 def set_up_shortcuts(interactive, target):
+    pass # moved to mdoes/relnk.py
 
-
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description=DESCRIPTION,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+def add_data_args(parser):
+    # These arguments are prefixed with an underscore because they are
+    # processed into non-underscored replacements with application objects.
+    parser.add_argument(
+        "-u", "--user", dest="_user", help="set username to download decks of"
     )
     parser.add_argument(
-        "-u", "--user", dest="user", help="set username to download decks of"
+        "-s", "--source", dest="_source", help="set source website"
     )
     parser.add_argument(
-        "-s", "--source", dest="source", help="set source website"
+        "-t", "--target", dest="_target", help="set target program"
     )
     parser.add_argument(
-        "-t", "--target", dest="target", help="set target program"
-    )
-    parser.add_argument(
-        "-p", "--path", dest="path", help="set deck file output directory"
+        "-p", "--path", dest="_path", help="set deck file output directory"
     )
     parser.add_argument(
         "-m",
         "--maybeboard",
-        dest="include_maybe",
+        dest="_include_maybe",
         help="include maybeboard in output sideboard",
         nargs="?",
         const=1,
     )
+    # Any string is admissable for a profile name.
     parser.add_argument("-n", "--name", dest="name", help="set profile name")
-    parser.add_argument(
-        "-a",
-        "--add",
-        dest="add",
-        help="launch wizard to add a new profile",
-        action="store_true",
-    )
-    parser.add_argument(
-        "-d",
-        "--delete",
-        dest="delete",
-        help="launch wizard or use options to delete a profile",
-        action="store_true",
-    )
+    # various flags    
     parser.add_argument(
         "-o",
         "--output",
         dest="output",
         action="store_true",
         help="add an output to a profile",
-    )
-    parser.add_argument(
-        "-e",
-        "--edit",
-        dest="edit",
-        action="store_true",
-        help="edit a profile as JSON",
-    )
-    parser.add_argument(
-        "-l",
-        "--latest",
-        dest="latest",
-        action="store_true",
-        help="download latest deck for user",
-    )
-    parser.add_argument(
-        "-v",
-        "--version",
-        dest="version",
-        action="store_true",
-        help="print version and exit",
     )
     parser.add_argument(
         "-q",
@@ -428,18 +395,43 @@ def parse_args():
         action="store_true",
         help="skip updating decks",
     )
-    parser.add_argument(
-        "-r",
-        "--relink",
-        dest="relink",
-        action="store_true",
-        help="create shortcuts for architrice",
-    )
 
-    return parser.parse_args()
+def process_args(args):
+    args.source = sources.get(args._source)
+    args.target = targets.get(args._target)
+    args.user = args.user and args._user.strip()
+    args.path = utils.expand_path(args._path)
+    args.include_maybe = args._include_maybe and bool(args._include_maybe)
 
+    return args
 
 def main():
+    parser = argparse.ArgumentParser(
+        description=DESCRIPTION,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
+    add_data_args(parser)
+
+    for mode in modes.modelist:
+        parser.add_argument(
+            mode.flag,
+            mode.long,
+            dest=mode.name,
+            action="store_true",
+            help=mode.help
+        )
+
+    args = process_args(parser.parse_args())
+
+    selected_modes = []
+
+    for mode in modes.modelist:
+        if getattr(args, mode.name):
+            selected_modes.append(mode)
+
+
+def main_old():
     args = parse_args()
     source = sources.get(args.source)
     target = targets.get(args.target)
