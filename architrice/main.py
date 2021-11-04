@@ -88,7 +88,6 @@ def get_profile(cache, interactive, prompt="Choose a profile"):
         logging.error("Multiple profiles match criteria.")
         return None
 
-
 def get_verified_user(source, user, interactive=False):
     if not user:
         if interactive:
@@ -399,11 +398,15 @@ def add_data_args(parser):
 def process_args(args):
     args.source = sources.get(args._source)
     args.target = targets.get(args._target)
-    args.user = args.user and args._user.strip()
+    args.user = args._user and args._user.strip()
     args.path = utils.expand_path(args._path)
-    args.include_maybe = args._include_maybe and bool(args._include_maybe)
+    args.include_maybe = bool(args._include_maybe)
 
     return args
+
+def resolve_missing_arg(name, args):
+    if name == "source":
+        return get_source(args.source, args.interactive)
 
 def main():
     parser = argparse.ArgumentParser(
