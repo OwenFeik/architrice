@@ -3,9 +3,9 @@ import os
 import subprocess
 import sys
 
-from .. import cli
 from .. import utils
 
+from . import cli
 from . import mode
 
 APP_NAME = utils.APP_NAME
@@ -141,7 +141,7 @@ def relink_shortcuts(shortcut_name, confirm=False):
 
 class Relnk(mode.Mode):
     def __init__(self):
-        super().__init__("r", "relink", ["target"])
+        super().__init__("r", "relink", "edit shortcuts to run architrice", ["target"])
 
     def main(args):
         if os.name == "nt":
@@ -153,10 +153,10 @@ class Relnk(mode.Mode):
                 return
 
             if not target.SUPPORTS_RELNK:
-                logging.info("This target doesn't support shortcut configuration.")
+                logging.info(
+                    "This target doesn't support shortcut configuration."
+                )
                 return
-
-            from . import relnk
 
             relink_shortcuts(
                 target.SHORTCUT_NAME,
@@ -173,4 +173,3 @@ class Relnk(mode.Mode):
                 logging.info(f'Running "{APP_NAME}" will now run {APP_NAME}.')
         else:
             logging.error("Unsupported operating system.")
-

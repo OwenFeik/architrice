@@ -1,6 +1,5 @@
 import requests
 
-from .. import caching
 from .. import utils
 
 from . import source
@@ -46,11 +45,8 @@ class Moxfield(source.Source):
         ret = []
         for deck in decks:
             ret.append(
-                caching.DeckUpdate(
-                    caching.DeckDetails(
-                        deck["publicId"],
-                        self.short,
-                    ),
+                self.deck_update_from(
+                    deck["publicId"],
                     utils.parse_iso_8601(deck["lastUpdatedAtUtc"]),
                 )
             )

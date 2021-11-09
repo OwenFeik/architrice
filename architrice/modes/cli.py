@@ -3,7 +3,7 @@ import os
 import subprocess
 import tempfile
 
-from . import utils
+from .. import utils
 
 PROMPT = "> "
 
