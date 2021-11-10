@@ -7,6 +7,7 @@ from .latest import Latest
 from .output import AddOutput
 from .relnk import Relnk
 from .version import Version
+from .clear_cards import ClearCards
 
 from .sync import Sync  # Export
 
@@ -20,4 +21,5 @@ flag_modes = [
     AddOutput(),
     Relnk(),
     Version(),
+    ClearCards()
 ]
