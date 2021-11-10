@@ -492,7 +492,6 @@ class Cache:
         target=None,
         user=None,
         path=None,
-        include_maybe=None,
         name=None,
     ):
         """Load all relevant data into memory from the database."""
@@ -529,8 +528,7 @@ class Cache:
             for tup in database.select_ignore_none(
                 "outputs",
                 target=getattr(target, "short", None),
-                profile=profile_db_id,
-                include_maybe=include_maybe,
+                profile=profile_db_id
             ):
                 (
                     output_db_id,

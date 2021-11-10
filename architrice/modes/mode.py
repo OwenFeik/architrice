@@ -66,11 +66,14 @@ class Mode:
         else:
             raise ValueError(f"Can't resolve missing argument: {arg}.")
 
+    def arg_is_optional(self, arg):
+        return arg == "name"
+
     def ensure_all_args(self, cache, args):
         for arg in self.required_args:
             if getattr(args, arg, None) is None:
                 value = self.resolve_missing_arg(cache, arg, args)
-                if not value:
+                if value is None and not self.arg_is_optional(arg):
                     logging.error(
                         f"Missing argument: {arg}."
                         f' Unable to complete action "{self.name}".'
@@ -99,6 +102,5 @@ class FilterArgsMode(Mode):
             args.target,
             args.user,
             args.path,
-            args.include_maybe,
             args.name,
         )

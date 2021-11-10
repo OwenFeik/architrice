@@ -1,9 +1,6 @@
 import logging
 import json
 
-from .. import sources
-from .. import targets
-
 from . import cli
 from . import common_json
 from . import mode
