@@ -41,21 +41,21 @@ def add_data_args(parser):
     # These arguments are prefixed with an underscore because they are
     # processed into non-underscored replacements with application objects.
     parser.add_argument(
-        "-u", "--user", dest="_user", help="set username to download decks of"
+        "-u", "--user", dest="user", help="set username to download decks of"
     )
     parser.add_argument(
-        "-s", "--source", dest="_source", help="set source website"
+        "-s", "--source", dest="source", help="set source website"
     )
     parser.add_argument(
-        "-t", "--target", dest="_target", help="set target program"
+        "-t", "--target", dest="target", help="set target program"
     )
     parser.add_argument(
-        "-p", "--path", dest="_path", help="set deck file output directory"
+        "-p", "--path", dest="path", help="set deck file output directory"
     )
     parser.add_argument(
         "-m",
         "--maybeboard",
-        dest="_include_maybe",
+        dest="include_maybe",
         help="include maybeboard in output sideboard",
         nargs="?",
         const=1,
@@ -80,11 +80,11 @@ def add_data_args(parser):
 
 
 def process_args(args):
-    args.source = sources.get(args._source)
-    args.target = targets.get(args._target)
-    args.user = args._user and args._user.strip()
-    args.path = utils.expand_path(args._path)
-    args.include_maybe = bool(args._include_maybe)
+    args.source = sources.get(args.source)
+    args.target = targets.get(args.target)
+    args.user = args.user and args.user.strip()
+    args.path = utils.expand_path(args.path)
+    args.include_maybe = bool(args.include_maybe)
 
     return args
 

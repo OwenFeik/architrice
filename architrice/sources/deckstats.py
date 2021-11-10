@@ -106,5 +106,5 @@ class Deckstats(source.Source):
             else:
                 return []
 
-    def verify_user(self, username):
+    def _verify_user(self, username):
         return bool(self.get_user_id(username))
