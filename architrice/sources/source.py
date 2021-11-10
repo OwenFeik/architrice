@@ -78,7 +78,7 @@ class Source(database.KeyStoredObject, abc.ABC):
         if result:
             logging.info("Verification succesful.")
         else:
-            logging.error("Verfification failed.")
+            logging.error("Verification failed.")
         return result
 
     def deck_update_from(self, deck_id, time):
