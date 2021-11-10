@@ -6,9 +6,15 @@ from . import cli
 from . import common_json
 from . import mode
 
+
 class ImportJson(mode.Mode):
     def __init__(self):
-        super().__init__("J", "import-json", "import JSON file (-p) as profile list", ["path"])
+        super().__init__(
+            "J",
+            "import-json",
+            "import JSON file (-p) as profile list",
+            ["path"],
+        )
 
     def resolve_missing_arg(self, cache, arg, args):
         if arg != "path":
@@ -18,7 +24,7 @@ class ImportJson(mode.Mode):
 
     def action(self, cache, args):
         if os.path.isfile(args.path):
-            with open(args.path, 'r') as f:
+            with open(args.path, "r") as f:
                 try:
                     data = json.load(f)
                 except json.decoder.JSONDecodeError:
@@ -37,9 +43,7 @@ class ImportJson(mode.Mode):
                         break
                     elif not common_json.verify_profile_json(profile):
                         identifier = profile.get("name") or identifier
-                        logging.error(
-                            f"{identifier} is invalid. Aborting."
-                        )
+                        logging.error(f"{identifier} is invalid. Aborting.")
                         break
                 else:
                     for i, profile in enumerate(data, 1):

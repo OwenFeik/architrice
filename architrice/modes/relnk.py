@@ -141,7 +141,9 @@ def relink_shortcuts(shortcut_name, confirm=False):
 
 class Relnk(mode.Mode):
     def __init__(self):
-        super().__init__("r", "relink", "edit shortcuts to run architrice", ["target"])
+        super().__init__(
+            "r", "relink", "edit shortcuts to run architrice", ["target"]
+        )
 
     def main(args):
         if os.name == "nt":

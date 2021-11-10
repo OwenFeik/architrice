@@ -31,7 +31,9 @@ def edit_profile_json(cache, profile):
 
 class EditJson(mode.FilterArgsMode):
     def __init__(self):
-        super().__init__("e", "edit-json", "edit a profile as JSON", ["profile"])
+        super().__init__(
+            "e", "edit-json", "edit a profile as JSON", ["profile"]
+        )
 
     def action(self, cache, args):
         if not args.interactive:

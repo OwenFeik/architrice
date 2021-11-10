@@ -14,5 +14,5 @@ class Latest(mode.FilterArgsMode):
         else:
             logging.info(
                 "No matching profiles to sync."
-                " Add one with \"python -m architrice -a\"."
+                ' Add one with "python -m architrice -a".'
             )

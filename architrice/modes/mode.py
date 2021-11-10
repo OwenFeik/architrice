@@ -14,7 +14,7 @@ class Mode:
         "include_maybe",
         "name",
         "profile",
-        "profiles"
+        "profiles",
     ]
 
     def __init__(self, flag, name, explanation, required_args=None):

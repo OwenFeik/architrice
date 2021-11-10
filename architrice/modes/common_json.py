@@ -6,6 +6,7 @@ from .. import utils
 
 from . import common
 
+
 def verify_output_json(output, i="\b"):
     if not "target" in output:
         logging.error(f"Output {i} is missing a target.")
@@ -86,6 +87,7 @@ def verify_profile_json(data):
             return False
 
     return True
+
 
 def import_profile_json(cache, profile_json):
     profile = cache.build_profile(

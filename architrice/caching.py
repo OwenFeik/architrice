@@ -528,7 +528,7 @@ class Cache:
             for tup in database.select_ignore_none(
                 "outputs",
                 target=getattr(target, "short", None),
-                profile=profile_db_id
+                profile=profile_db_id,
             ):
                 (
                     output_db_id,

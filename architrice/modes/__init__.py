@@ -8,7 +8,7 @@ from .output import AddOutput
 from .relnk import Relnk
 from .version import Version
 
-from .sync import Sync # Export
+from .sync import Sync  # Export
 
 flag_modes = [
     AddProfile(),

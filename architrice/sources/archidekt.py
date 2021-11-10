@@ -43,7 +43,9 @@ class Archidekt(source.Source):
         ret = []
         for deck in decks:
             ret.append(
-                self.deck_update_from(str(deck["id"]), utils.parse_iso_8601(deck["updatedAt"]))
+                self.deck_update_from(
+                    str(deck["id"]), utils.parse_iso_8601(deck["updatedAt"])
+                )
             )
         return ret
 
