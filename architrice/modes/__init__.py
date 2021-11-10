@@ -1,17 +1,21 @@
 from .profile import AddProfile
 from .delete import DeleteProfile
-from .edit import Edit
+from .edit_json import EditJson
+from .export_json import ExportJson
+from .import_json import ImportJson
 from .latest import Latest
 from .output import AddOutput
 from .relnk import Relnk
 from .version import Version
 
-from .sync import Sync
+from .sync import Sync # Export
 
 flag_modes = [
     AddProfile(),
     DeleteProfile(),
-    Edit(),
+    EditJson(),
+    ExportJson(),
+    ImportJson(),
     Latest(),
     AddOutput(),
     Relnk(),
