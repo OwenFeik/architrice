@@ -21,5 +21,5 @@ flag_modes = [
     AddOutput(),
     Relnk(),
     Version(),
-    ClearCards()
+    ClearCards(),
 ]
