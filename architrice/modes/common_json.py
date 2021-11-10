@@ -1,14 +1,10 @@
 import logging
-import json
 
 from .. import sources
 from .. import targets
 from .. import utils
 
-from . import cli
 from . import common
-from . import mode
-
 
 def verify_output_json(output, i="\b"):
     if not "target" in output:
@@ -91,51 +87,22 @@ def verify_profile_json(data):
 
     return True
 
-
-def edit_profile_json(cache, profile):
-    editing = json.dumps(profile.to_json(), indent=4)
-
-    while True:
-        try:
-            editing = cli.get_text_editor(editing, "profile.json")
-            edited_json = json.loads(editing)
-            if verify_profile_json(edited_json):
-                break
-        except json.JSONDecodeError:
-            logging.error("Failed to parse edited JSON.")
-
-        if not cli.get_decision("Try again?"):
-            return
-
-    new_profile = cache.build_profile(
-        sources.get(edited_json["source"]),
-        edited_json["user"],
-        edited_json["name"],
+def import_profile_json(cache, profile_json):
+    profile = cache.build_profile(
+        sources.get(profile_json["source"]),
+        profile_json["user"],
+        profile_json["name"],
     )
 
-    # In the case that the new profile is redundant with an existing profile,
-    # the same object is reused, so we don't want to remove it.
-    if new_profile is not profile:
-        cache.remove_profile(profile)
-
-    for output in edited_json["outputs"]:
+    # In the event profile is an existing profile, the duplicate outputs will
+    # be resolved during database insertion, with the newer outputs overwriting
+    # the older (the desired behaviour).
+    for output in profile_json["outputs"]:
         cache.build_output(
-            new_profile,
+            profile,
             targets.get(output["target"]),
             output["output_dir"],
             output["include_maybe"],
         )
-    logging.info("Successfully updated profile.")
 
-
-class Edit(mode.FilterArgsMode):
-    def __init__(self):
-        super().__init__("e", "edit", "edit a profile as JSON", ["profile"])
-
-    def action(self, cache, args):
-        if not args.interactive:
-            logging.info(
-                "Interactivity required to edit as JSON. Ignoring -e flag."
-            )
-        else:
-            edit_profile_json(cache, args.profile)
+    return profile
