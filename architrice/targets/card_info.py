@@ -5,7 +5,8 @@ import re
 
 import requests
 
-from .. import caching
+from architrice import deckreprs
+
 from .. import database
 from .. import utils
 
@@ -144,14 +145,14 @@ def find(name, mtgo_id_required=False, update_if_necessary=True):
         _, _, mtgo_id, *_, reprint = tup
 
         if not reprint and (mtgo_id or not mtgo_id_required):
-            return caching.Card.from_record(tup)
+            return deckreprs.Card.from_record(tup)
 
     # Settle for any printing
     for tup in matches:
         _, _, mtgo_id, *_ = tup
 
         if mtgo_id or not mtgo_id_required:
-            return caching.Card.from_record(tup)
+            return deckreprs.Card.from_record(tup)
 
     if update_if_necessary:
         logging.debug(f"Missing card info for {name}. Updating database.")

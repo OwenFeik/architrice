@@ -3,7 +3,6 @@ import re
 import bs4
 import requests
 
-from .. import caching
 from .. import utils
 
 from . import source
@@ -157,11 +156,7 @@ class TappedOut(source.Source):
                         updated = self.age_string_to_timestamp(h5.text.strip())
                         break
 
-                decks.append(
-                    caching.DeckUpdate(
-                        caching.DeckDetails(deck_id, self.short), updated
-                    )
-                )
+                decks.append(self.deck_update_from(deck_id, updated))
 
             i += 1
 

@@ -3,30 +3,42 @@ import os
 import subprocess
 import sys
 
-from . import cli
-from . import utils
+from .. import utils
 
-# List of common shortcut locations on windows
-# ("Friendly name", "path\\to\\dir")
-SHORTCUT_PATHS = [
-    ("Start Menu", "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs"),
-    (
-        "Start Menu",
-        os.path.join(os.getenv("USERPROFILE"), "Start Menu", "Programs"),
-    ),
-    (
-        "Task Bar",
-        os.path.join(
-            os.getenv("APPDATA"),
-            "Microsoft",
-            "Internet Explorer",
-            "Quick Launch",
-            "User Pinned",
-            "TaskBar",
+from . import cli
+from . import mode
+
+APP_NAME = utils.APP_NAME
+
+try:
+    # List of common shortcut locations on windows
+    # ("Friendly name", "path\\to\\dir")
+    SHORTCUT_PATHS = [
+        (
+            "Start Menu",
+            "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs",
         ),
-    ),
-    ("Desktop", os.path.join(os.getenv("USERPROFILE"), "Desktop")),
-]
+        (
+            "Start Menu",
+            os.path.join(os.getenv("USERPROFILE"), "Start Menu", "Programs"),
+        ),
+        (
+            "Task Bar",
+            os.path.join(
+                os.getenv("APPDATA"),
+                "Microsoft",
+                "Internet Explorer",
+                "Quick Launch",
+                "User Pinned",
+                "TaskBar",
+            ),
+        ),
+        ("Desktop", os.path.join(os.getenv("USERPROFILE"), "Desktop")),
+    ]
+except TypeError:
+    # not on Windows, getenv returns None, causing join to TypeError
+    # we won't use this list on Linux anyway.
+    pass
 
 # Snippets used in powershell scripts to read/edit shortcuts
 PS_SHORTCUT_SNIPPET = (
@@ -125,3 +137,39 @@ def relink_shortcuts(shortcut_name, confirm=False):
                         script_name, shortcut_target
                     )
                     relink_shortcut(shortcut_path, script_path)
+
+
+class Relnk(mode.Mode):
+    def __init__(self):
+        super().__init__("r", "relink", "edit shortcuts to run architrice", ["target"])
+
+    def main(args):
+        if os.name == "nt":
+            target = utils.get_target(args.target, args.interactive)
+            if not target:
+                logging.info(
+                    "Unable to set up shortcuts as no target has been provided."
+                )
+                return
+
+            if not target.SUPPORTS_RELNK:
+                logging.info(
+                    "This target doesn't support shortcut configuration."
+                )
+                return
+
+            relink_shortcuts(
+                target.SHORTCUT_NAME,
+                not cli.get_decision("Automatically update all shortcuts?"),
+            )
+        elif os.name == "posix":
+            APP_PATH = f"/usr/bin/{APP_NAME}"
+            if cli.get_decision(f"Add script to run {APP_NAME} to /usr/bin/?"):
+                script_path = os.path.join(utils.DATA_DIR, APP_NAME)
+                with open(script_path, "w") as f:
+                    f.write(f"{sys.executable} -m {APP_NAME}\n")
+                os.chmod(script_path, 0o755)
+                subprocess.call(["sudo", "mv", script_path, APP_PATH])
+                logging.info(f'Running "{APP_NAME}" will now run {APP_NAME}.')
+        else:
+            logging.error("Unsupported operating system.")

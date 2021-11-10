@@ -3,7 +3,6 @@ import re
 import bs4
 import requests
 
-from .. import caching
 from .. import utils
 
 from . import source
@@ -91,11 +90,8 @@ class Deckstats(source.Source):
             if folder:
                 for deck in folder.get("decks", []):
                     decks.append(
-                        caching.DeckUpdate(
-                            caching.DeckDetails(
-                                self.format_deck_id(deck["saved_id"], user_id),
-                                self.short,
-                            ),
+                        self.deck_update_from(
+                            self.format_deck_id(deck["saved_id"], user_id),
                             utils.timestamp_to_utc(deck["updated"]),
                         )
                     )
