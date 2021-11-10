@@ -1,9 +1,8 @@
 import abc
-import dataclasses
 import logging
 
-from .. import caching
 from .. import database
+from .. import deckreprs
 
 
 class Source(database.KeyStoredObject, abc.ABC):
@@ -24,7 +23,7 @@ class Source(database.KeyStoredObject, abc.ABC):
 
     def create_deck(self, deck_id, name, description):
         """Create a Deck with relevant information."""
-        return caching.Deck(deck_id, self.short, name, description)
+        return deckreprs.Deck(deck_id, self.short, name, description)
 
     @abc.abstractmethod
     def _get_deck(self, deck_id):
@@ -79,5 +78,10 @@ class Source(database.KeyStoredObject, abc.ABC):
         if result:
             logging.info("Verification succesful.")
         else:
-            logging.error("Verfification failed.")
+            logging.error("Verification failed.")
         return result
+
+    def deck_update_from(self, deck_id, time):
+        return deckreprs.DeckUpdate(
+            deckreprs.DeckDetails(deck_id, self.short), time
+        )

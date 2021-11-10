@@ -10,6 +10,7 @@
 *egg-info
 __pycache__*
 .vscode
+build*
 dist*
 env*
 out*

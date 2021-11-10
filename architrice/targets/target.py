@@ -39,7 +39,7 @@ class Target(database.KeyStoredObject, abc.ABC):
             )
 
         for deck, path in deck_tuples:
-            self.save_deck(deck, path, card_info_map)
+            self.save_deck(deck, path, include_maybe, card_info_map)
 
     def create_file_name(self, deck_name):
         return utils.create_file_name(deck_name) + self.file_extension

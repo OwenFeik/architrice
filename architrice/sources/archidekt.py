@@ -1,6 +1,5 @@
 import requests
 
-from .. import caching
 from .. import utils
 
 from . import source
@@ -44,13 +43,15 @@ class Archidekt(source.Source):
         ret = []
         for deck in decks:
             ret.append(
-                caching.DeckUpdate(
-                    caching.DeckDetails(str(deck["id"]), self.short),
-                    utils.parse_iso_8601(deck["updatedAt"]),
+                self.deck_update_from(
+                    str(deck["id"]), utils.parse_iso_8601(deck["updatedAt"])
                 )
             )
         return ret
 
+    # TODO might be able to short circuit this by stopping when we find a deck
+    # that has an updated time less recent than the last run. Will need to check
+    # how results are ordered and add an event to Architrice to track last run.
     def _get_deck_list(self, username, allpages=True):
         decks = []
         url = f"{Archidekt.URL_BASE}cards/?owner={username}&ownerexact=true"

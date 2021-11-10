@@ -5,7 +5,8 @@ import re
 
 import requests
 
-from .. import caching
+from architrice import deckreprs
+
 from .. import database
 from .. import utils
 
@@ -73,6 +74,8 @@ def update_card_list():
         "vanguard",
     ]
 
+    dfc_layouts = ["meld", "modal_dfc", "transform"]
+
     # Tuple format:
     # (name, mtgo_id, is_dfc, collector_number, edition, reprint)
 
@@ -88,7 +91,7 @@ def update_card_list():
             (
                 card["name"],
                 card.get("mtgo_id"),
-                "card_faces" in card,
+                card["layout"] in dfc_layouts,
                 card["collector_number"],
                 card["set"],
                 card["reprint"],
@@ -142,14 +145,14 @@ def find(name, mtgo_id_required=False, update_if_necessary=True):
         _, _, mtgo_id, *_, reprint = tup
 
         if not reprint and (mtgo_id or not mtgo_id_required):
-            return caching.Card.from_record(tup)
+            return deckreprs.Card.from_record(tup)
 
     # Settle for any printing
     for tup in matches:
         _, _, mtgo_id, *_ = tup
 
         if mtgo_id or not mtgo_id_required:
-            return caching.Card.from_record(tup)
+            return deckreprs.Card.from_record(tup)
 
     if update_if_necessary:
         logging.debug(f"Missing card info for {name}. Updating database.")
@@ -158,7 +161,7 @@ def find(name, mtgo_id_required=False, update_if_necessary=True):
             name, mtgo_id_required=mtgo_id_required, update_if_necessary=False
         )
     else:
-        logging.debug(f"Unable to find suitable card info for {name}.")
+        logging.error(f"Unable to find card info for {name}.")
         return None
 
 
