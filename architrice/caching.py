@@ -346,6 +346,11 @@ class Profile(database.StoredObject):
                 " existing output."
             )
 
+    def clear_outputs(self):
+        for output in self.outputs:
+            output.delete_stored()
+        self.outputs = []
+
     def save_deck(self, deck):
         for output in self.outputs:
             output.save_deck(deck)

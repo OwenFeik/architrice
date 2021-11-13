@@ -21,10 +21,10 @@ def edit_profile_json(cache, profile):
         if not cli.get_decision("Try again?"):
             return
 
-        # In the case that the new profile is redundant with an existing
-        # profile, the same object is reused, so we don't want to remove it.
-        if common_json.import_profile_json(cache, edited_json) is not profile:
-            cache.remove_profile(profile)
+    # In the case that the new profile is redundant with an existing
+    # profile, the same object is reused, so we don't want to remove it.
+    if common_json.import_profile_json(cache, edited_json) is not profile:
+        cache.remove_profile(profile)
 
     logging.info("Successfully updated profile.")
 

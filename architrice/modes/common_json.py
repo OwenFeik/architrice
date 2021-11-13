@@ -96,9 +96,11 @@ def import_profile_json(cache, profile_json):
         profile_json["name"],
     )
 
-    # In the event profile is an existing profile, the duplicate outputs will
-    # be resolved during database insertion, with the newer outputs overwriting
-    # the older (the desired behaviour).
+    # In the event profile is an existing profile, we want to clear it's outputs
+    # as this process overwrites them. If it's a new profile it won't have any
+    # outputs and this is a no-op.
+    profile.clear_outputs()
+
     for output in profile_json["outputs"]:
         cache.build_output(
             profile,
