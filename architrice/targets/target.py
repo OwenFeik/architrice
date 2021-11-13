@@ -28,8 +28,13 @@ class Target(database.KeyStoredObject, abc.ABC):
             return utils.expand_path(os.path.join("~", "Decks"))
 
     @abc.abstractmethod
-    def save_deck(self, deck, path, include_maybe=False, card_info_map=None):
+    def _save_deck(self, deck, path, include_maybe=False, card_info_map=None):
         """Writes deck to path in format using card_info_map."""
+
+    def save_deck(self, deck, path, include_maybe=False, card_info_map=None):
+        if card_info_map is None and self.needs_card_info:
+            card_info_map = card_info.map_from_deck(deck)
+        self._save_deck(deck, path, include_maybe, card_info_map)
 
     def save_decks(self, deck_tuples, include_maybe=False, card_info_map=None):
         if card_info_map is None:

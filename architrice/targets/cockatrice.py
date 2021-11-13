@@ -35,7 +35,7 @@ class Cockatrice(target.Target):
     def suggest_directory(self):
         return Cockatrice.DECK_DIRECTORY
 
-    def save_deck(self, deck, path, include_maybe=False, card_info_map=None):
+    def _save_deck(self, deck, path, include_maybe=False, card_info_map=None):
         deck_to_xml(deck, path, include_maybe, card_info_map)
 
 

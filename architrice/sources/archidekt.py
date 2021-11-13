@@ -49,9 +49,6 @@ class Archidekt(source.Source):
             )
         return ret
 
-    # TODO might be able to short circuit this by stopping when we find a deck
-    # that has an updated time less recent than the last run. Will need to check
-    # how results are ordered and add an event to Architrice to track last run.
     def _get_deck_list(self, username, allpages=True):
         decks = []
         url = f"{Archidekt.URL_BASE}cards/?owner={username}&ownerexact=true"
@@ -65,6 +62,16 @@ class Archidekt(source.Source):
             url = j["next"]
 
         return self.deck_list_to_generic_format(decks)
+
+    def _get_latest_deck(self, username):
+        try:
+            # By passing allpages=False, we avoid grabbing unnecessary pages of
+            # results, as Archidekt returns results presorted by updated time.
+            return max(
+                self._get_deck_list(username, False), key=lambda d: d.updated
+            )
+        except ValueError:
+            return None
 
     def _verify_user(self, username):
         return bool(len(self._get_deck_list(username, False)))

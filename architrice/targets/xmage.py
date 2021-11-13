@@ -38,7 +38,7 @@ class XMage(target.Target):
 
         return card_list_string
 
-    def save_deck(self, deck, path, include_maybe=False, card_info_map=None):
+    def _save_deck(self, deck, path, include_maybe=False, card_info_map=None):
         # XMage decks have the following format:
         #
         # QTY [SET:COLLECTOR_NUMBER] CARD_NAME
@@ -50,12 +50,6 @@ class XMage(target.Target):
         # LAYOUT SIDEBOARD:(ROW< COLS)(NONE,false,50)|([SET:COLLECTOR_NUMBER],)
         #   as with the main deck. These layout specifications are optional and
         #   so Architrice omits them.
-
-        if card_info_map is None:
-            card_info_map = card_info.map_from_deck(
-                deck, mtgo_id_required=False
-            )
-
         deck_string = self.format_card_list(
             card_info_map, deck.get_main_deck()
         ) + self.format_card_list(

@@ -49,9 +49,7 @@ class Mtgo(target.Target):
                 return directory
         return super().suggest_directory()
 
-    def save_deck(self, deck, path, include_maybe, card_info_map=None):
-        if card_info_map is None:
-            card_info_map = card_info.map_from_deck(deck, mtgo_id_required=True)
+    def _save_deck(self, deck, path, include_maybe, card_info_map=None):
         return deck_to_xml(deck, path, include_maybe, card_info_map)
 
 

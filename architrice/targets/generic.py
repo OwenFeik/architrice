@@ -16,7 +16,7 @@ class Generic(target.Target):
             False,
         )
 
-    def save_deck(self, deck, path, include_maybe):
+    def _save_deck(self, deck, path, include_maybe):
         deck_string = ""
         for quantity, name in deck.get_main_deck():
             deck_string += f"{quantity} {name}\n"

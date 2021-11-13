@@ -8,8 +8,8 @@ class Latest(mode.FilterArgsMode):
         super().__init__("l", "latest", "download latest deck for user")
 
     def action(self, cache, args):
-        if args.profiles:
-            for profile in args.profiles:
+        if cache.profiles:
+            for profile in cache.profiles:
                 profile.download_latest()
         else:
             logging.info(
