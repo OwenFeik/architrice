@@ -1,0 +1,43 @@
+{
+    "success": true,
+    "order_field": "updated",
+    "order_direction": "desc",
+    "folder": {
+        "id": 0,
+        "owner_id": 1,
+        "decks": [
+            {
+                "url_neutral": "",
+                "image_url": "",
+                "group_by": "type_extended",
+                "preview_cards_idprintings": [
+                    63706
+                ],
+                "name": "Test Deck",
+                "saved_id": 1,
+                "owner_id": 1,
+                "format_id": 10,
+                "added": 1640387360,
+                "updated": 1640387417,
+                "sort_by": "name,asc",
+                "is_public": true,
+                "colorflag": 20,
+                "colors": [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                "views": 3,
+                "number_main": 4,
+                "number_main_nonbasic": 4
+            }
+        ],
+        "description": "",
+        "decks_total": 1,
+        "decks_current_page": 1,
+        "decks_per_page": 25
+    }
+}

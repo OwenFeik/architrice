@@ -17,7 +17,7 @@ class Deckstats(source.Source):
         super().__init__(Deckstats.NAME, Deckstats.SHORT)
 
     def format_deck_id(self, deck_id, owner_id):
-        return deck_id + f"?owner_id={owner_id}"
+        return f"{deck_id}&owner_id={owner_id}"
 
     def card_json_to_card(self, card):
         return (card["amount"], card["name"])
@@ -91,7 +91,7 @@ class Deckstats(source.Source):
                 for deck in folder.get("decks", []):
                     decks.append(
                         self.deck_update_from(
-                            self.format_deck_id(deck["saved_id"], user_id),
+                            self.format_deck_id(str(deck["saved_id"]), user_id),
                             utils.timestamp_to_utc(deck["updated"]),
                         )
                     )

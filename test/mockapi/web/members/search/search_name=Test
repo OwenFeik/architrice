@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head prefix="og: http://ogp.me/ns# fb: http://ogp.me/ns/fb# deckstats: http://ogp.me/ns/fb/deckstats#">
+<script src="//deckstats.net/lng.js.1640358316.php?lng=en" charset="utf-8"></script>
+<script src="//deckstats.net/js/merged/merged.jquery.1640358344.js" charset="utf-8"></script>
+<script src="//deckstats.net/js/merged/merged.jquery.plugins.1640358344.js" charset="utf-8"></script>
+<script src="//deckstats.net/js/merged/merged.deck.1640358354.js" charset="utf-8"></script>
+<title>
+		Search Members: &quot;Test&quot; &mdash; deckstats.net | Magic: The Gathering Decks
+</title>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<link rel="manifest" href="https://deckstats.net/manifest.json">
+<link rel="shortcut icon" sizes="16x16" href="https://deckstats.net/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="https://deckstats.net/img/logo/deckstats32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="https://deckstats.net/img/logo/deckstats48.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://deckstats.net/img/logo/deckstats192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="https://deckstats.net/img/logo/deckstats512.png">
+<link rel="apple-touch-icon" type="image/png" sizes="180x180" href="https://deckstats.net/img/logo/deckstats180.png">
+<meta name="description" content="Search results for deckstats.net members related to &quot;Test&quot;" />
+<meta name="theme-color" content="#336799" />
+<meta property="fb:admins" content="794549653" />
+<meta property="fb:app_id" content="318919094866464" />
+<meta property="og:site_name" content="deckstats" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Search Members: &quot;Test&quot;" />
+<meta property="og:description" content="Search results for deckstats.net members related to &quot;Test&quot;" />
+<meta property="og:image" content="https://deckstats.net/fb/logo.png" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@deckstats" />
+<meta name="twitter:title" content="Search Members: &quot;Test&quot;" />
+<meta name="twitter:description" content="Search results for deckstats.net members related to &quot;Test&quot;" />
+<meta name="twitter:image" content="https://deckstats.net/fb/logo.png" />
+<link rel="alternate" href="https://deckstats.net/members/search/?search_name=Test&amp;lng=en" hreflang="en" />
+<link rel="alternate" href="https://deckstats.net/members/search/?search_name=Test&amp;lng=de" hreflang="de" />
+<link rel="alternate" href="https://deckstats.net/members/search/?search_name=Test&amp;lng=es" hreflang="es" />
+<link rel="alternate" href="https://deckstats.net/members/search/?search_name=Test&amp;lng=pt" hreflang="pt" />
+<link rel="alternate" href="https://deckstats.net/members/search/?search_name=Test&amp;lng=it" hreflang="it" />
+<link rel="alternate" href="https://deckstats.net/members/search/?search_name=Test&amp;lng=fr" hreflang="fr" />
+
+<script>
+		window.cookieconsent_options = {"message":"At deckstats.net we use cookies to remember information between visits and customize our website for you.","dismiss":"Okay!","learnMore":"More info","link":"https:\/\/deckstats.net?lng=en&cookies=1","theme":"dark-bottom"};
+	</script>
+
+
+<script>
+	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+	(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+	ga('create', 'UA-68718-10', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+
+	</script>
+<script>
+window['nitroAds'] = window['nitroAds'] || { createAd: function () { window.nitroAds.queue.push(["createAd", arguments]) }, queue: [] }; //nitropay
+
+var PATH = "\/\/deckstats.net";
+var PATH_SSL = "https:\/\/deckstats.net";
+var LNG = "en";
+var COUNTRY = "AU";
+var user_logged_in = false;
+var set_logo_svg_path = PATH + '/img/set_logos.svg';
+
+var IS_STAGING = false;
+
+//as a function so it can be called when async loading of cardlink is done
+function nk_cardlink_init() {
+	nk_deckstats_lng = LNG;
+
+	//https://hacks.mozilla.org/2009/07/cross-site-xmlhttprequest-with-cors/
+	try {
+		if('withCredentials' in new XMLHttpRequest()) {
+			nk_cardlink_external = 'https://www.mtg-forum.de/db/get.php';
+		} else {
+			nk_cardlink_external = PATH+'/db_tunnel.php';
+		}
+	} catch(ex) {
+		//this catches IE8, which may not allow 'new XMLHttpRequest()'
+		nk_cardlink_external = PATH+'/db_tunnel.php';
+	}
+
+	nk_cardlink_lng = (nk_deckstats_lng == 'de'? 'de' : 'en');
+	nk_cardlink_svg_path = PATH + '/img/mana.svg';
+	nk_cardlink_all = true;
+	nk_cardlink_loading = get_icon('fa fa-spinner fa-pulse fa-fw');
+};
+
+nk_cardlink_init();
+
+timestamp_now = 1640387704;
+
+	smf_user_id = 0;
+	smf_user_name = "Guest";
+	smf_session_var = "b7b3c79c6";
+	smf_session_id = "d0e0a48b86cd2ff6c48f544c3f63872a";
+	
+	IS_SUPPORTER = false;
+	USER_SETTINGS = {"language":"","dci_first_name":"","dci_last_name":"","dci_number":"","deck_default_tab":"auto","deck_columns":["type","mana","set","price_miracle","price_tcgplayer","price_cardhoarder"],"form_grouping":"type_extended","deck_default_sort_by":"name,asc","deck_default_sections":"","deckbuilder_type":"interactive","preferred_price_source":"tcgplayer","disable_ads":false,"privacy_show_friend_list":true,"privacy_events_public":true,"privacy_events_friends":true,"notification_supporter_dismissed":false};
+
+	MTG_FORMATS = {"1":"Casual","6":"Standard","4":"Modern","10":"EDH \/ Commander","21":"Duel Commander","17":"Oathbreaker","18":"Pioneer","19":"Historic","16":"Brawl","3":"Legacy","2":"Vintage","9":"Pauper","7":"Highlander","12":"Tiny Leaders","13":"Frontier","11":"Peasant","15":"Penny Dreadful","5":"Extended","8":"Cube","14":"Limited","20":"Card List"};
+	MTG_CONDITIONS = {"1":{"code":"NM","name":"Mint\/Near-Mint"},"3":{"code":"LP","name":"Lightly Played"},"4":{"code":"MP","name":"Moderately Played"},"5":{"code":"HP","name":"Heavily Played"},"6":{"code":"DM","name":"Damaged"}};
+	MTG_LANGUAGES = {"1":{"flag":"us","name":"English","code":"en"},"2":{"flag":"cn","name":"Chinese","code":"cn"},"3":{"flag":"fr","name":"French","code":"fr"},"4":{"flag":"de","name":"German","code":"de"},"5":{"flag":"it","name":"Italian","code":"it"},"6":{"flag":"jp","name":"Japanese","code":"jp"},"7":{"flag":"kr","name":"Korean","code":"kr"},"8":{"flag":"ptbr","name":"Portuguese","code":"pt"},"9":{"flag":"ru","name":"Russian","code":"ru"},"10":{"flag":"es","name":"Spanish","code":"es"}};
+
+	if(window.group_by_options) {
+		group_by_options = group_by_options.concat(["section","type","type_extended","color","cc","rarity","none"]);
+	}
+	if(window.sort_by_options) {
+		sort_by_options = sort_by_options.concat(["none","name,asc","name,desc","amount,asc","amount,desc","type,asc","type,desc","cmc,asc","cmc,desc","set,asc","set,desc","price,asc","price,desc"]);
+	}
+
+	sets_version = 1640358332;
+
+	
+	
+$(function() { if(!window.footer_hidden) { $("#footer_container").show(); } });
+</script> <meta name="viewport" content="width=device-width" />
+<link rel="stylesheet" href="//deckstats.net/css/merged/merged.base.1640358343.css">
+<link rel="stylesheet" href="//deckstats.net/css/print.1640358315.css" media="print">
+</head>
+<body class=" narrow">
+<div id="header_container" class="">
+<div id="header_left">
+<a href="https://deckstats.net?lng=en">
+<img src="https://deckstats.net/img/header_deckstats.png" srcset="https://deckstats.net/img/header_deckstats.png 375w,https://deckstats.net/img/header_deckstats_2x.png 750w" alt="deckstats.net" style="max-height: 90px;" />
+</a>
+</div>
+<div id="header_right" class="XX_AU_XX">
+<div class="header_small_hide" id="header_right_big">
+<div id="header_right_big_inner">
+<div id="np-header"></div>
+</div>
+</div>
+<div class="header_small_show" id="header_right_small">
+<div id="header_right_small_inner">
+<div id="np-header-mobile" style=""></div>
+</div>
+</div>
+<script>
+				window['nitroAds'] = window['nitroAds'] || { createAd: function () { window.nitroAds.queue.push(["createAd", arguments]) }, queue: [] }; //nitropay
+				$(function() {
+					try {
+						if(is_small_screen()) {
+							window['nitroAds'].createAd('np-header-mobile', {
+								"floor": 0.05,
+								"refreshLimit": 10,
+								"refreshTime": 30,
+								"sizes": [
+									[ 320, 50 ],
+								],
+								"report": {
+									"enabled": true,
+									"wording": "Report Ad",
+									"position": "bottom-left"
+								}
+							});
+						} else {
+							window['nitroAds'].createAd('np-header', {
+								"floor": 0.05,
+								"refreshLimit": 10,
+								"refreshTime": 30,
+								"sizes": [
+									[ 728, 90 ]
+								],
+								"report": {
+									"enabled": true,
+									"wording": "Report Ad",
+									"position": "bottom-left"
+								}
+							});
+						}
+					} catch(e) {
+						//ignore
+					}
+				});
+				</script>
+</div>
+</div>
+<div id="submenu_container">
+<div class="small_screen_logo">
+<a href='https://deckstats.net?lng=en'>
+<img src="https://deckstats.net/apple-touch-icon.png" alt="deckstats.net" style="width: 30px; height: 30px;" />
+</a>
+</div>
+<div id="submenu">
+<div class="small_screen_toggle_button">
+<i class="fa fa-bars" aria-hidden="true"></i>Menu </div>
+<p class="home small_screen_toggle_content">
+<a href="https://deckstats.net?lng=en">
+<i class="fa fa-home" aria-hidden="true"></i>Home </a>
+<a href="https://deckstats.net/decks/?lng=en">
+<svg class="svg svg-deck_multiple "><use xlink:href="https://deckstats.net/img/icons.svg#svg-deck_multiple"></use></svg>Decks </a>
+<a href='https://deckstats.net/deckbuilder/en/'>
+<svg class="svg svg-deck_wrench "><use xlink:href="https://deckstats.net/img/icons.svg#svg-deck_wrench"></use></svg>Deckbuilder </a>
+<a href="https://deckstats.net/collection/?lng=en">
+<svg class="svg svg-collection "><use xlink:href="https://deckstats.net/img/icons.svg#svg-collection"></use></svg>Collection </a>
+<a href="https://deckstats.net/forum/?language=english-utf8">
+<i class="fa fa-comments-o" aria-hidden="true"></i>Forum </a>
+<a href="https://deckstats.net/sets/?lng=en">
+<i class="fa fa-list" aria-hidden="true"></i>Sets </a>
+<a class="small_screen_show login_menu_segment" href="#">
+<i class="fa fa-sign-in" aria-hidden="true"></i>Log In </a>
+</p>
+<div id="user_in_header" class="login_in_header">
+<a href="#" class="small_screen_show login_menu_segment segment rightmost_segment"><i class="fa fa-sign-in" aria-hidden="true"></i></a>
+<div id="login_register_segments">
+<form action="https://deckstats.net/forum/index.php?language=english-utf8&amp;action=login2" method="post" accept-charset="UTF-8" id="login_form_in_header">
+<input type="hidden" name="b7b3c79c6" value="d0e0a48b86cd2ff6c48f544c3f63872a" />
+<div class="segment_container">
+<div class="login_register_dialog_row">
+<input type="text" name="user" size="10" class="text" placeholder="Username" />
+</div>
+<div class="login_register_dialog_row">
+<input type="password" name="passwrd" size="10" class="text" placeholder="Password" />
+<input type="hidden" name="cookielength" value="-1" />
+</div>
+<div class="login_register_dialog_row">
+<a href="#" id="user_login_segment">
+Login </a>
+</div>
+</div>
+</form>
+<div class="login_register_dialog_row">
+<a href="https://deckstats.net/forum/index.php?language=english-utf8&amp;action=register" id="user_register_segment" class="rightmost_segment">
+Register </a>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="login_dialog" class="any_dialog" title="Login">
+<div class="new_content login_dialog_show_if_error">
+You need to be logged in to do this. </div>
+<div class="new_content">
+<div class="login_form_container">
+<div class="login_form_register_container">
+<a href="https://deckstats.net/forum/index.php?language=english-utf8&amp;action=register" class="button login_form_register_button">
+<i class="fa fa-user-plus" aria-hidden="true"></i>
+Register </a>
+</div>
+<div class="login_form_or">
+— or —
+</div>
+<form action="https://deckstats.net/forum/index.php?language=english-utf8&amp;action=login2" method="post" accept-charset="UTF-8" class="login_form_form">
+<input type="hidden" name="b7b3c79c6" value="d0e0a48b86cd2ff6c48f544c3f63872a" />
+<input type="hidden" name="cookielength" value="-1" />
+<div class="login_form_login_row">
+<input type="text" name="user" size="10" class="text" placeholder="Username" />
+</div>
+<div class="login_form_login_row">
+<input type="password" name="passwrd" size="10" class="text" placeholder="Password" />
+</div>
+<div class="login_form_login_row">
+<button class="button">
+<i class="fa fa-sign-in" aria-hidden="true"></i>
+Login </a>
+</div>
+</form>
+</div>
+</div>
+<div class="new_content login_dialog_show_if_error">
+When you have logged in, click the <b>Refresh Session</b> button and then try again. </div>
+</div>
+<div id="eventbar_container_outer">
+<div id="eventbar_container_inner">
+<div id="eventbar_toggle">
+<i class="fa fa-chevron-left eventbar_toggle_on"></i>
+<i class="fa fa-chevron-right eventbar_toggle_off"></i>
+</div>
+<div id="eventbar_container">
+<div id="eventbar"></div>
+</div>
+</div>
+<div id="eventbar_footer">
+<div class="eventbar_footer_row">
+<a href="https://discord.gg/hUAHUrv" target="_blank" rel="noopener">
+<span style="font-size: 75%; margin-right: .5em;"><svg class="svg svg-discord "><use xlink:href="https://deckstats.net/img/icons.svg#svg-discord"></use></svg></span>
+Discord
+</a>
+</div>
+<div class="eventbar_footer_row">
+<a href="https://twitter.com/deckstats" target="_blank" rel="noopener">
+<span style="margin-right: .5em;"><i class="fa fa-twitter" aria-hidden="true"></i></span>
+@deckstats
+</a>
+</div>
+<div class="eventbar_footer_row">
+<a href="https://www.facebook.com/deckstats/" target="_blank" rel="noopener">
+<span style="margin-right: .5em;"><i class="fa fa-facebook-official" aria-hidden="true"></i></span>
+deckstats.net
+</a>
+</div>
+</div>
+</div>
+<div id="deckstats_main_container">
+<div id="page_title_container">
+<div id="deckstats_main_header_container"></div>
+<h2 id="subtitle">Search Members: &quot;Test&quot;</h2> </div>
+<div id="page_container">
+<div id="page">
+<div class="content-box" id="member_search">
+<form method="get" action="https://deckstats.net/members/search/" accept-charset="utf-8">
+<input type="hidden" name="utf8" value="&#x2714;" />
+<input type="hidden" name="lng" value="en" />
+<div class="member_search_row">
+
+<input type="text" id="search_name" name="search_name" value="Test" class="text" />
+<button type="submit" id="member_search_button">Search Members</button>
+</div>
+</form>
+</div>
+<div class="content-box" id="member_search_results">
+<div class="inhalt2">
+<div class="found_member">
+<div class="member_avatar">
+<a href="https://deckstats.net/decks/1/?lng=en">
+<div class="member_missing_avatar">F</div> </a>
+</div>
+<div class="member_info">
+<a href="https://deckstats.net/decks/1?lng=en" class="member_name">
+Test</a>
+</div>
+ <div class="member_info member_info_secondary">
+Karma: 0 &middot;
+
+Joined: 10.0 years ago 
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="page_loading"></div>
+</div>
+<div id="footer_container" class="">
+<div id="footer_full">
+<div class="footer_links">
+<a href="https://deckstats.net/members/?lng=en">Members</a>
+| <a href="https://deckstats.net/donate/?lng=en">Donate</a>
+| <a href="https://deckstats.net/about/?lng=en">About Us</a>
+| <a href="https://deckstats.net/forum/index.php?action=agreement" target="_blank">Terms</a>
+| <a href="https://koelling.co.uk/privacy?deckstats" target="_blank">Privacy Policy</a>
+<span id="nitropay-cookie-consent" style="display:none">
+| <a href="#" onclick="window.__cmp('showModal'); return false;">Cookie Preferences</a>
+</span>
+|
+Theme:
+<span id="theme_toggle">
+<input type="radio" id="theme_toggle_dark" value="dark" name="theme">
+<label for="theme_toggle_dark" class="first" title="Dark Theme">
+<span><i class="fa fa-moon-o" aria-hidden="true" style="margin: 0"></i></span>
+</label>
+<input type="radio" id="theme_toggle_auto" value="auto" name="theme" checked="checked">
+<label for="theme_toggle_auto" title="Follow OS Theme">
+<span><i class="fa fa-magic" aria-hidden="true" style="margin: 0"></i></span>
+</label>
+<input type="radio" id="theme_toggle_light" value="light" name="theme">
+<label for="theme_toggle_light" class="last" title="Light Theme">
+<span><i class="fa fa-sun-o" aria-hidden="true" style="margin: 0"></i></span>
+</label>
+</span>
+|
+<span id="language_button" title="Select Language">
+<span id="language_bar_title">
+<i class="fa fa-globe" aria-hidden="true"></i>
+Language
+</span>
+</span>
+<span data-ccpa-link="1"></span>
+</div>
+<div id="copyright_notice" lang="en">
+deckstats.net &copy; 2021. All rights reserved.
+Wizards of the Coast, Magic: The Gathering, and their logos are trademarks of Wizards of the Coast LLC in the United States and other countries. &copy; 2009 Wizards. All Rights Reserved.
+<span onclick="jQuery('#copyright_details').show(); jQuery(this).hide();" style="cursor: pointer; text-decoration: underline;">more...</span>
+<div id="copyright_details" style="display: none">
+This web site is not affiliated with, endorsed, sponsored, or specifically approved by Wizards of the Coast LLC.
+This web site may use the trademarks and other intellectual property of Wizards of the Coast LLC, which is permitted under Wizards' Fan Site Policy. For example, MAGIC: THE GATHERING(r) is a trademark of Wizards of the Coast.
+For more information about Wizards of the Coast or any of Wizards' trademarks or other intellectual property, please visit their website at (www.wizards.com).
+All information is subject to change without prior notice. Although we try to present current and accurate information, we cannot make any guarantees of any kind.
+Responsibility for comments, forum posts, messages and any other user-generated content lies with their respective authors.
+We do not monitor or necessarily agree with any personal opinions or other expressions published in any such content.
+</div>
+</div>
+</div>
+</div>
+<ul id="language_menu" class="any_menu">
+<li><a data-code="en" class="language_link language_link_en" href="https://deckstats.net/members/search/?search_name=Test&amp;lng=en"><img src="https://i.hbtronix.de/flags/usgb.png" alt="en" width="16" height="11" /> English</a>
+<li><a data-code="de" class="language_link language_link_de" href="https://deckstats.net/members/search/?search_name=Test&amp;lng=de"><img src="https://i.hbtronix.de/flags/de.png" alt="de" width="16" height="11" /> Deutsch</a>
+<li><a data-code="es" class="language_link language_link_es" href="https://deckstats.net/members/search/?search_name=Test&amp;lng=es"><img src="https://i.hbtronix.de/flags/es.png" alt="es" width="16" height="11" /> Espa&ntilde;ol</a>
+<li><a data-code="pt" class="language_link language_link_pt" href="https://deckstats.net/members/search/?search_name=Test&amp;lng=pt"><img src="https://i.hbtronix.de/flags/ptbr.png" alt="pt" width="16" height="11" /> Portugu&ecirc;s</a>
+<li><a data-code="it" class="language_link language_link_it" href="https://deckstats.net/members/search/?search_name=Test&amp;lng=it"><img src="https://i.hbtronix.de/flags/it.png" alt="it" width="16" height="11" /> Italiano</a>
+<li><a data-code="fr" class="language_link language_link_fr" href="https://deckstats.net/members/search/?search_name=Test&amp;lng=fr"><img src="https://i.hbtronix.de/flags/fr.png" alt="fr" width="16" height="11" /> Fran&ccedil;ais</a>
+</ul>
+<script>has_nitro=true;</script><script async src="https://s.nitropay.com/ads-196.js"></script></div>
+<div id="wait_dialog" class="any_dialog" title="Please Wait">
+<p style="text-align: center;"><i class="fa fa-refresh fa-spin fa-3x fa-fw"></i></p>
+</div>
+<div id="session_error_dialog" class="any_dialog" title="Session error">
+<div class="new_content">
+An error with your login session occured: </div>
+<div class="new_content">
+<span id="session_error_text">unknown</span>
+</div>
+<div class="new_content">
+You can do this in a different tab to avoid losing the data you entered here. Once you are done, click the <b>Refresh Session</b> button and then try again.	</div>
+<div class="new_content">
+If the problem persists, please contact us.	</div>
+</div>
+<script src="//deckstats.net/js/shariff.min.js"></script>
+</body>
+</html>

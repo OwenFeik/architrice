@@ -8,10 +8,13 @@ from . import source
 class Archidekt(source.Source):
     NAME = "Archidekt"
     SHORT = NAME[0]
-    URL_BASE = "https://archidekt.com/api/decks/"
+    URL_BASE = "https://archidekt.com/"
 
     def __init__(self):
         super().__init__(Archidekt.NAME, Archidekt.SHORT)
+
+    def format_api_request(self, path):
+        return Archidekt.URL_BASE + "api/decks/" + path
 
     def deck_to_generic_format(self, deck_id, deck):
         d = self.create_deck(deck_id, deck["name"], deck["description"])
@@ -34,7 +37,7 @@ class Archidekt(source.Source):
         return self.deck_to_generic_format(
             deck_id,
             requests.get(
-                Archidekt.URL_BASE + deck_id + "/" + "small/" if small else "/",
+                self.format_api_request(deck_id + "/" + "small/" if small else "/"),
                 params={"format": "json"},
             ).json(),
         )
@@ -51,7 +54,7 @@ class Archidekt(source.Source):
 
     def _get_deck_list(self, username, allpages=True):
         decks = []
-        url = f"{Archidekt.URL_BASE}cards/?owner={username}&ownerexact=true"
+        url = self.format_api_request(f"cards/?owner={username}&ownerexact=true")
         while url:
             j = requests.get(url).json()
             decks.extend(j["results"])

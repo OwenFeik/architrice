@@ -1,0 +1,60 @@
+{
+    "sections": [
+        {
+            "name": "Main",
+            "amount": 4,
+            "amount_nonbasic": 4,
+            "cards": [
+                {
+                    "name": "Bala Ged Recovery \/\/ Bala Ged Sanctuary",
+                    "amount": 1,
+                    "valid": true,
+                    "idprintings": 58032
+                },
+                {
+                    "name": "Blex, Vexing Pest \/\/ Search for Blex",
+                    "amount": 1,
+                    "valid": true,
+                    "idprintings": 63706
+                },
+                {
+                    "name": "Life \/\/ Death",
+                    "amount": 1,
+                    "valid": true,
+                    "idprintings": 10560
+                },
+                {
+                    "name": "Sol Ring",
+                    "amount": 1,
+                    "valid": true,
+                    "idprintings": 352961
+                }
+            ]
+        }
+    ],
+    "sideboard": [
+        
+    ],
+    "maybeboard": [
+        
+    ],
+    "tokens": [
+        
+    ],
+    "saved_id": 2367426,
+    "name": "Test Deck",
+    "folder_id": 0,
+    "is_public": true,
+    "format_id": 10,
+    "number_main": 4,
+    "number_main_nonbasic": 4,
+    "number_sideboard": 0,
+    "number_sideboard_nonbasic": 0,
+    "number_maybe": 0,
+    "number_tokens": 0,
+    "colorflag": 20,
+    "group_by": "type_extended",
+    "sort_by": "name,asc",
+    "revision1": 1,
+    "updated_text": "2021-12-25"
+}

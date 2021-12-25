@@ -1,0 +1,40 @@
+{
+    "pageNumber": 1,
+    "pageSize": 25,
+    "totalResults": 1,
+    "totalPages": 1,
+    "data": [
+        {
+            "id": "1",
+            "name": "Test Deck",
+            "hasPrimer": false,
+            "format": "commander",
+            "areCommentsEnabled": true,
+            "visibility": "public",
+            "publicUrl": "",
+            "publicId": "1",
+            "likeCount": 0,
+            "viewCount": 0,
+            "commentCount": 0,
+            "isLegal": false,
+            "mainCardId": "LK63m",
+            "mainCardIdIsCardFace": true,
+            "createdByUser": {
+                "userName": "Test",
+                "badges": []
+            },
+            "authors": [
+                {
+                    "userName": "Test",
+                    "badges": []
+                }
+            ],
+            "createdAtUtc": "2021-12-25T00:00:00.000Z",
+            "lastUpdatedAtUtc": "2021-12-25T00:00:00.000Z",
+            "mainboardCount": 4,
+            "sideboardCount": 0,
+            "maybeboardCount":0,
+            "hubNames": []
+        }
+    ]
+}

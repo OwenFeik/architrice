@@ -1,0 +1,22 @@
+{
+    "count": 1,
+    "next": null,
+    "previous": null,
+    "results": [
+        {
+            "owner": {
+                "id": 1,
+                "username": "Test",
+                "profile": 1
+            },
+            "name": "Test Deck",
+            "updatedAt": "2021-12-24T21:00:00.000000Z",
+            "deckFormat": 3,
+            "id": 1,
+            "colors": {"B": 1, "G": 1},
+            "featured": "",
+            "customFeatured": "",
+            "private": false
+        }
+    ]
+}

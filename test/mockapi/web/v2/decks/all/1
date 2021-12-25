@@ -1,0 +1,655 @@
+{
+    "id": "1",
+    "name": "Test Deck",
+    "description": "",
+    "format": "commander",
+    "visibility": "public",
+    "publicUrl": "",
+    "publicId": "1",
+    "likeCount": 0,
+    "viewCount": 0,
+    "commentCount": 0,
+    "areCommentsEnabled": true,
+    "createdByUser": {
+        "userName": "Test",
+        "badges": [
+            
+        ]
+    },
+    "authors": [
+        {
+            "userName": "Test",
+            "badges": [
+                
+            ]
+        }
+    ],
+    "main": {
+        "id": "kaDWd",
+        "scryfall_id": "c204b7ca-0904-40fa-b20c-92400fae20b8",
+        "set": "stx",
+        "set_name": "Strixhaven: School of Mages",
+        "name": "Blex, Vexing Pest // Search for Blex",
+        "cn": "148",
+        "layout": "modal_dfc",
+        "cmc": 3.0000,
+        "type": "2",
+        "type_line": "Legendary Creature \u2014 Pest // Sorcery",
+        "colors": [
+            
+        ],
+        "color_indicator": [
+            
+        ],
+        "color_identity": [
+            "B",
+            "G"
+        ],
+        "legalities": {
+            "standard": "legal",
+            "future": "legal",
+            "historic": "legal",
+            "gladiator": "legal",
+            "pioneer": "legal",
+            "modern": "legal",
+            "legacy": "legal",
+            "pauper": "not_legal",
+            "vintage": "legal",
+            "penny": "not_legal",
+            "commander": "legal",
+            "brawl": "legal",
+            "historicbrawl": "legal",
+            "alchemy": "legal",
+            "paupercommander": "not_legal",
+            "duel": "legal",
+            "oldschool": "not_legal",
+            "premodern": "not_legal"
+        },
+        "frame": "2015",
+        "frame_effects": [
+            "legendary"
+        ],
+        "reserved": false,
+        "foil": true,
+        "nonfoil": true,
+        "etched": false,
+        "glossy": false,
+        "rarity": "mythic",
+        "border_color": "black",
+        "colorshifted": false,
+        "lang": "en",
+        "latest": false,
+        "has_multiple_editions": true,
+        "has_arena_legal": true,
+        "prices": {
+            "usd": 1.2800,
+            "usd_foil": 1.2900,
+            "eur": 1.5700,
+            "eur_foil": 1.7800,
+            "tix": 2.3000,
+            "ck": 1.2900,
+            "ck_foil": 1.9900,
+            "lastUpdatedAtUtc": "2021-12-23T23:57:07.19Z"
+        },
+        "card_faces": [
+            {
+                "id": "LK63m",
+                "name": "Blex, Vexing Pest",
+                "mana_cost": "{2}{G}",
+                "type_line": "Legendary Creature \u2014 Pest",
+                "oracle_text": "Other Pests, Bats, Insects, Snakes, and Spiders you control get \u002B1/\u002B1.\nWhen Blex, Vexing Pest dies, you gain 4 life.",
+                "colors": [
+                    "G"
+                ],
+                "color_indicator": [
+                    
+                ],
+                "power": "3",
+                "toughness": "2",
+                "flavor_text": "Pests are typically harvested before they outgrow their enclosures. Blex is far from typical."
+            },
+            {
+                "id": "kywBN",
+                "name": "Search for Blex",
+                "mana_cost": "{2}{B}{B}",
+                "type_line": "Sorcery",
+                "oracle_text": "Look at the top five cards of your library. You may put any number of them into your hand and the rest into your graveyard. You lose 3 life for each card you put into your hand this way.",
+                "colors": [
+                    "B"
+                ],
+                "color_indicator": [
+                    
+                ]
+            }
+        ],
+        "artist": "Ekaterina Burmak",
+        "promo_types": [
+            
+        ],
+        "cardHoarderUrl": "https://www.cardhoarder.com/cards/88775?affiliate_id=moxfield\u0026ref=card-profile\u0026utm_campaign=affiliate\u0026utm_medium=card\u0026utm_source=moxfield",
+        "cardKingdomUrl": "mtg/strixhaven-school-of-mages/blex-vexing-pest",
+        "cardKingdomFoilUrl": "mtg/strixhaven-school-of-mages/blex-vexing-pest-foil",
+        "cardMarketUrl": "https://www.cardmarket.com/en/Magic/Products/Search?referrer=moxfield\u0026searchString=Blex%2C\u002BVexing\u002BPest\u0026utm_campaign=card_prices\u0026utm_medium=text\u0026utm_source=moxfield",
+        "tcgPlayerUrl": "https://shop.tcgplayer.com/product/productsearch?id=235972\u0026utm_campaign=affiliate\u0026utm_medium=api\u0026utm_source=Moxfield",
+        "isArenaLegal": true,
+        "released_at": "2021-04-23T00:00:00Z",
+        "edhrec_rank": 5385,
+        "multiverse_ids": [
+            513627,
+            513626
+        ],
+        "cardmarket_id": 558102,
+        "mtgo_id": 88775,
+        "arena_id": 76542,
+        "tcgplayer_id": 235972,
+        "isToken": false,
+        "defaultFinish": "nonFoil"
+    },
+    "mainboardCount": 4,
+    "mainboard": {
+        "Sol Ring": {
+            "quantity": 1,
+            "boardType": "mainboard",
+            "finish": "nonFoil",
+            "isFoil": false,
+            "isAlter": false,
+            "isProxy": false,
+            "card": {
+                "id": "k7Olp",
+                "scryfall_id": "ca57eebe-5bc9-4cff-ae91-ccd509aa36ce",
+                "set": "voc",
+                "set_name": "Crimson Vow Commander",
+                "name": "Sol Ring",
+                "cn": "168",
+                "layout": "normal",
+                "cmc": 1.0000,
+                "type": "5",
+                "type_line": "Artifact",
+                "oracle_text": "{T}: Add {C}{C}.",
+                "mana_cost": "{1}",
+                "colors": [
+                    
+                ],
+                "color_indicator": [
+                    
+                ],
+                "color_identity": [
+                    
+                ],
+                "legalities": {
+                    "standard": "not_legal",
+                    "future": "not_legal",
+                    "historic": "not_legal",
+                    "gladiator": "not_legal",
+                    "pioneer": "not_legal",
+                    "modern": "not_legal",
+                    "legacy": "banned",
+                    "pauper": "not_legal",
+                    "vintage": "restricted",
+                    "penny": "not_legal",
+                    "commander": "legal",
+                    "brawl": "not_legal",
+                    "historicbrawl": "not_legal",
+                    "alchemy": "not_legal",
+                    "paupercommander": "not_legal",
+                    "duel": "banned",
+                    "oldschool": "not_legal",
+                    "premodern": "not_legal"
+                },
+                "frame": "2015",
+                "reserved": false,
+                "foil": false,
+                "nonfoil": true,
+                "etched": false,
+                "glossy": false,
+                "rarity": "uncommon",
+                "border_color": "black",
+                "colorshifted": false,
+                "flavor_text": "Lost to time is the artificer\u0027s art of trapping light from a distant star in a ring of purest gold.",
+                "lang": "en",
+                "latest": false,
+                "has_multiple_editions": true,
+                "has_arena_legal": false,
+                "prices": {
+                    "usd": 1.5000,
+                    "eur": 1.0300,
+                    "lastUpdatedAtUtc": "2021-12-24T05:59:32.127Z"
+                },
+                "card_faces": [
+                    
+                ],
+                "artist": "Mike Bierek",
+                "promo_types": [
+                    
+                ],
+                "cardHoarderUrl": "https://www.cardhoarder.com/cards?affiliate_id=moxfield\u0026data%5Bsearch%5D=Sol\u002BRing\u0026ref=card-profile\u0026utm_campaign=affiliate\u0026utm_medium=card\u0026utm_source=moxfield",
+                "cardMarketUrl": "https://www.cardmarket.com/en/Magic/Products/Search?referrer=moxfield\u0026searchString=Sol\u002BRing\u0026utm_campaign=card_prices\u0026utm_medium=text\u0026utm_source=moxfield",
+                "tcgPlayerUrl": "https://shop.tcgplayer.com/product/productsearch?id=254201\u0026utm_campaign=affiliate\u0026utm_medium=api\u0026utm_source=Moxfield",
+                "isArenaLegal": false,
+                "released_at": "2021-11-19T00:00:00Z",
+                "edhrec_rank": 1,
+                "multiverse_ids": [
+                    545788
+                ],
+                "cardmarket_id": 584148,
+                "tcgplayer_id": 254201,
+                "isToken": false,
+                "defaultFinish": "nonFoil"
+            },
+            "useCmcOverride": true,
+            "useManaCostOverride": true,
+            "useColorIdentityOverride": true
+        },
+        "Bala Ged Recovery // Bala Ged Sanctuary": {
+            "quantity": 1,
+            "boardType": "mainboard",
+            "finish": "nonFoil",
+            "isFoil": false,
+            "isAlter": false,
+            "isProxy": false,
+            "card": {
+                "id": "EWdMZ",
+                "scryfall_id": "c5cb3052-358d-44a7-8cfd-cd31b236494a",
+                "set": "znr",
+                "set_name": "Zendikar Rising",
+                "name": "Bala Ged Recovery // Bala Ged Sanctuary",
+                "cn": "180",
+                "layout": "modal_dfc",
+                "cmc": 3.0000,
+                "type": "3",
+                "type_line": "Sorcery // Land",
+                "colors": [
+                    
+                ],
+                "color_indicator": [
+                    
+                ],
+                "color_identity": [
+                    "G"
+                ],
+                "legalities": {
+                    "standard": "legal",
+                    "future": "legal",
+                    "historic": "legal",
+                    "gladiator": "legal",
+                    "pioneer": "legal",
+                    "modern": "legal",
+                    "legacy": "legal",
+                    "pauper": "not_legal",
+                    "vintage": "legal",
+                    "penny": "legal",
+                    "commander": "legal",
+                    "brawl": "legal",
+                    "historicbrawl": "legal",
+                    "alchemy": "legal",
+                    "paupercommander": "not_legal",
+                    "duel": "legal",
+                    "oldschool": "not_legal",
+                    "premodern": "not_legal"
+                },
+                "frame": "2015",
+                "reserved": false,
+                "foil": true,
+                "nonfoil": true,
+                "etched": false,
+                "glossy": false,
+                "rarity": "uncommon",
+                "border_color": "black",
+                "colorshifted": false,
+                "lang": "en",
+                "latest": true,
+                "has_multiple_editions": false,
+                "has_arena_legal": true,
+                "prices": {
+                    "usd": 3.7700,
+                    "usd_foil": 4.1000,
+                    "eur": 2.2300,
+                    "eur_foil": 2.7000,
+                    "tix": 0.0100,
+                    "ck": 4.9900,
+                    "ck_foil": 5.9900,
+                    "lastUpdatedAtUtc": "2021-12-24T10:15:07.76Z"
+                },
+                "card_faces": [
+                    {
+                        "id": "YnWlx",
+                        "name": "Bala Ged Recovery",
+                        "mana_cost": "{2}{G}",
+                        "type_line": "Sorcery",
+                        "oracle_text": "Return target card from your graveyard to your hand.",
+                        "colors": [
+                            "G"
+                        ],
+                        "color_indicator": [
+                            
+                        ],
+                        "flavor_text": "\u0022Always have a backup plan.\u0022\n\u2014Doral, Bala Ged guide"
+                    },
+                    {
+                        "id": "k71W8",
+                        "name": "Bala Ged Sanctuary",
+                        "mana_cost": "",
+                        "type_line": "Land",
+                        "oracle_text": "Bala Ged Sanctuary enters the battlefield tapped.\n{T}: Add {G}.",
+                        "colors": [
+                            
+                        ],
+                        "color_indicator": [
+                            
+                        ],
+                        "flavor_text": "\u0022I know it\u0027s around here somewhere.\u0022\n\u2014Doral, Bala Ged guide"
+                    }
+                ],
+                "artist": "Lucas Staniec",
+                "promo_types": [
+                    
+                ],
+                "cardHoarderUrl": "https://www.cardhoarder.com/cards/83343?affiliate_id=moxfield\u0026ref=card-profile\u0026utm_campaign=affiliate\u0026utm_medium=card\u0026utm_source=moxfield",
+                "cardKingdomUrl": "mtg/zendikar-rising/bala-ged-recovery",
+                "cardKingdomFoilUrl": "mtg/zendikar-rising/bala-ged-recovery-foil",
+                "cardMarketUrl": "https://www.cardmarket.com/en/Magic/Products/Search?referrer=moxfield\u0026searchString=Bala\u002BGed\u002BRecovery\u0026utm_campaign=card_prices\u0026utm_medium=text\u0026utm_source=moxfield",
+                "tcgPlayerUrl": "https://shop.tcgplayer.com/product/productsearch?id=221901\u0026utm_campaign=affiliate\u0026utm_medium=api\u0026utm_source=Moxfield",
+                "isArenaLegal": true,
+                "released_at": "2020-09-25T00:00:00Z",
+                "edhrec_rank": 244,
+                "multiverse_ids": [
+                    491825
+                ],
+                "cardmarket_id": 495294,
+                "mtgo_id": 83343,
+                "arena_id": 73386,
+                "tcgplayer_id": 221901,
+                "isToken": false,
+                "defaultFinish": "nonFoil"
+            },
+            "useCmcOverride": true,
+            "useManaCostOverride": true,
+            "useColorIdentityOverride": true
+        },
+        "Life // Death": {
+            "quantity": 1,
+            "boardType": "mainboard",
+            "finish": "nonFoil",
+            "isFoil": false,
+            "isAlter": false,
+            "isProxy": false,
+            "card": {
+                "id": "YdzBG",
+                "scryfall_id": "2424f2c4-366b-42cf-bf4b-a8a5bfdd2c4b",
+                "set": "ddj",
+                "set_name": "Duel Decks: Izzet vs. Golgari",
+                "name": "Life // Death",
+                "cn": "77",
+                "layout": "split",
+                "cmc": 3.0000,
+                "type": "3",
+                "type_line": "Sorcery // Sorcery",
+                "mana_cost": "{G} // {1}{B}",
+                "colors": [
+                    "B",
+                    "G"
+                ],
+                "color_indicator": [
+                    
+                ],
+                "color_identity": [
+                    "B",
+                    "G"
+                ],
+                "legalities": {
+                    "standard": "not_legal",
+                    "future": "not_legal",
+                    "historic": "not_legal",
+                    "gladiator": "not_legal",
+                    "pioneer": "not_legal",
+                    "modern": "not_legal",
+                    "legacy": "legal",
+                    "pauper": "not_legal",
+                    "vintage": "legal",
+                    "penny": "not_legal",
+                    "commander": "legal",
+                    "brawl": "not_legal",
+                    "historicbrawl": "not_legal",
+                    "alchemy": "not_legal",
+                    "paupercommander": "not_legal",
+                    "duel": "legal",
+                    "oldschool": "not_legal",
+                    "premodern": "legal"
+                },
+                "frame": "2003",
+                "reserved": false,
+                "foil": false,
+                "nonfoil": true,
+                "etched": false,
+                "glossy": false,
+                "rarity": "uncommon",
+                "border_color": "black",
+                "colorshifted": false,
+                "lang": "en",
+                "latest": true,
+                "has_multiple_editions": true,
+                "has_arena_legal": false,
+                "prices": {
+                    "usd": 2.1500,
+                    "eur": 0.8700,
+                    "tix": 0.6700,
+                    "ck": 2.4900,
+                    "lastUpdatedAtUtc": "2021-12-23T15:36:42.303Z"
+                },
+                "card_faces": [
+                    {
+                        "id": "kOzMn",
+                        "name": "Life",
+                        "mana_cost": "{G}",
+                        "type_line": "Sorcery",
+                        "oracle_text": "All lands you control become 1/1 creatures until end of turn. They\u0027re still lands.",
+                        "colors": [
+                            
+                        ],
+                        "color_indicator": [
+                            
+                        ]
+                    },
+                    {
+                        "id": "E1dbB",
+                        "name": "Death",
+                        "mana_cost": "{1}{B}",
+                        "type_line": "Sorcery",
+                        "oracle_text": "Return target creature card from your graveyard to the battlefield. You lose life equal to its mana value.",
+                        "colors": [
+                            
+                        ],
+                        "color_indicator": [
+                            
+                        ]
+                    }
+                ],
+                "artist": "Ryan Barger",
+                "promo_types": [
+                    
+                ],
+                "cardHoarderUrl": "https://www.cardhoarder.com/cards/46099?affiliate_id=moxfield\u0026ref=card-profile\u0026utm_campaign=affiliate\u0026utm_medium=card\u0026utm_source=moxfield",
+                "cardKingdomUrl": "mtg/duel-decks-izzet-vs-golgari/life-death",
+                "cardMarketUrl": "https://www.cardmarket.com/en/Magic/Products/Search?referrer=moxfield\u0026searchString=Life\u002B%2F%2F\u002BDeath\u0026utm_campaign=card_prices\u0026utm_medium=text\u0026utm_source=moxfield",
+                "tcgPlayerUrl": "https://shop.tcgplayer.com/product/productsearch?id=66370\u0026utm_campaign=affiliate\u0026utm_medium=api\u0026utm_source=Moxfield",
+                "isArenaLegal": false,
+                "released_at": "2012-09-07T00:00:00Z",
+                "multiverse_ids": [
+                    292976
+                ],
+                "cardmarket_id": 258172,
+                "mtgo_id": 46099,
+                "tcgplayer_id": 66370,
+                "isToken": false,
+                "defaultFinish": "nonFoil"
+            },
+            "useCmcOverride": true,
+            "useManaCostOverride": true,
+            "useColorIdentityOverride": true
+        }
+    },
+    "sideboardCount": 0,
+    "sideboard": {
+        
+    },
+    "maybeboardCount": 0,
+    "maybeboard": {
+        
+    },
+    "commandersCount": 1,
+    "commanders": {
+        "Blex, Vexing Pest // Search for Blex": {
+            "quantity": 1,
+            "boardType": "commanders",
+            "finish": "nonFoil",
+            "isFoil": false,
+            "isAlter": false,
+            "isProxy": false,
+            "card": {
+                "id": "kaDWd",
+                "scryfall_id": "c204b7ca-0904-40fa-b20c-92400fae20b8",
+                "set": "stx",
+                "set_name": "Strixhaven: School of Mages",
+                "name": "Blex, Vexing Pest // Search for Blex",
+                "cn": "148",
+                "layout": "modal_dfc",
+                "cmc": 3.0000,
+                "type": "2",
+                "type_line": "Legendary Creature \u2014 Pest // Sorcery",
+                "colors": [
+                    
+                ],
+                "color_indicator": [
+                    
+                ],
+                "color_identity": [
+                    "B",
+                    "G"
+                ],
+                "legalities": {
+                    "standard": "legal",
+                    "future": "legal",
+                    "historic": "legal",
+                    "gladiator": "legal",
+                    "pioneer": "legal",
+                    "modern": "legal",
+                    "legacy": "legal",
+                    "pauper": "not_legal",
+                    "vintage": "legal",
+                    "penny": "not_legal",
+                    "commander": "legal",
+                    "brawl": "legal",
+                    "historicbrawl": "legal",
+                    "alchemy": "legal",
+                    "paupercommander": "not_legal",
+                    "duel": "legal",
+                    "oldschool": "not_legal",
+                    "premodern": "not_legal"
+                },
+                "frame": "2015",
+                "frame_effects": [
+                    "legendary"
+                ],
+                "reserved": false,
+                "foil": true,
+                "nonfoil": true,
+                "etched": false,
+                "glossy": false,
+                "rarity": "mythic",
+                "border_color": "black",
+                "colorshifted": false,
+                "lang": "en",
+                "latest": false,
+                "has_multiple_editions": true,
+                "has_arena_legal": true,
+                "prices": {
+                    "usd": 1.2800,
+                    "usd_foil": 1.2900,
+                    "eur": 1.5700,
+                    "eur_foil": 1.7800,
+                    "tix": 2.3000,
+                    "ck": 1.2900,
+                    "ck_foil": 1.9900,
+                    "lastUpdatedAtUtc": "2021-12-23T23:57:07.19Z"
+                },
+                "card_faces": [
+                    {
+                        "id": "LK63m",
+                        "name": "Blex, Vexing Pest",
+                        "mana_cost": "{2}{G}",
+                        "type_line": "Legendary Creature \u2014 Pest",
+                        "oracle_text": "Other Pests, Bats, Insects, Snakes, and Spiders you control get \u002B1/\u002B1.\nWhen Blex, Vexing Pest dies, you gain 4 life.",
+                        "colors": [
+                            "G"
+                        ],
+                        "color_indicator": [
+                            
+                        ],
+                        "power": "3",
+                        "toughness": "2",
+                        "flavor_text": "Pests are typically harvested before they outgrow their enclosures. Blex is far from typical."
+                    },
+                    {
+                        "id": "kywBN",
+                        "name": "Search for Blex",
+                        "mana_cost": "{2}{B}{B}",
+                        "type_line": "Sorcery",
+                        "oracle_text": "Look at the top five cards of your library. You may put any number of them into your hand and the rest into your graveyard. You lose 3 life for each card you put into your hand this way.",
+                        "colors": [
+                            "B"
+                        ],
+                        "color_indicator": [
+                            
+                        ]
+                    }
+                ],
+                "artist": "Ekaterina Burmak",
+                "promo_types": [
+                    
+                ],
+                "cardHoarderUrl": "https://www.cardhoarder.com/cards/88775?affiliate_id=moxfield\u0026ref=card-profile\u0026utm_campaign=affiliate\u0026utm_medium=card\u0026utm_source=moxfield",
+                "cardKingdomUrl": "mtg/strixhaven-school-of-mages/blex-vexing-pest",
+                "cardKingdomFoilUrl": "mtg/strixhaven-school-of-mages/blex-vexing-pest-foil",
+                "cardMarketUrl": "https://www.cardmarket.com/en/Magic/Products/Search?referrer=moxfield\u0026searchString=Blex%2C\u002BVexing\u002BPest\u0026utm_campaign=card_prices\u0026utm_medium=text\u0026utm_source=moxfield",
+                "tcgPlayerUrl": "https://shop.tcgplayer.com/product/productsearch?id=235972\u0026utm_campaign=affiliate\u0026utm_medium=api\u0026utm_source=Moxfield",
+                "isArenaLegal": true,
+                "released_at": "2021-04-23T00:00:00Z",
+                "edhrec_rank": 5385,
+                "multiverse_ids": [
+                    513627,
+                    513626
+                ],
+                "cardmarket_id": 558102,
+                "mtgo_id": 88775,
+                "arena_id": 76542,
+                "tcgplayer_id": 235972,
+                "isToken": false,
+                "defaultFinish": "nonFoil"
+            },
+            "useCmcOverride": true,
+            "useManaCostOverride": true,
+            "useColorIdentityOverride": true
+        }
+    },
+    "companionsCount": 0,
+    "companions": {
+        
+    },
+    "signatureSpellsCount": 0,
+    "signatureSpells": {
+        
+    },
+    "tokens": [
+        
+    ],
+    "hubs": [
+        
+    ],
+    "createdAtUtc": "2021-12-25T00:00:00.000Z",
+    "lastUpdatedAtUtc": "2021-12-25T00:00:00.000Z",
+    "exportId": "",
+    "authorTags": {
+        
+    },
+    "isTooBeaucoup": false
+}
