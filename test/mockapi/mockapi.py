@@ -110,9 +110,23 @@ def stop():
     for source in architrice.sources.sourcelist:
         source.URL_BASE = source._URL_BASE
 
+    architrice.targets.card_info.SCRYFALL_BULK_DATA_URL = (
+        architrice.targets.card_info._SCRYFALL_BULK_DATA_URL
+    )
+
 
 def mock():
+    # Remap sources
     for source in architrice.sources.sourcelist:
         source._URL_BASE = source.URL_BASE
         source.URL_BASE = URL
+
+    # Remap card_info
+    architrice.targets.card_info._SCRYFALL_BULK_DATA_URL = (
+        architrice.targets.card_info.SCRYFALL_BULK_DATA_URL
+    )
+    architrice.targets.card_info.SCRYFALL_BULK_DATA_URL = (
+        URL + "bulk-data/default-cards"
+    )
+
     run()

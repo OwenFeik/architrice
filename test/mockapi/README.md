@@ -52,3 +52,6 @@ These cards where chosen to test the DFC handling of the app.
     * `users/Test/decks` is the list of decks.
 
 ## TappedOut
+
+* `users/Test/mtg-decks` is the list of decks.
+* `mtg-decks/test-deck` is the test decklist.
