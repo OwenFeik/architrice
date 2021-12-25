@@ -107,11 +107,12 @@ def stop():
     server.shutdown()
     thread.join()
 
+    for source in architrice.sources.sourcelist:
+        source.URL_BASE = source._URL_BASE
+
 
 def mock():
-    # Set up all sources to query local server for requests. Note that this
-    # is not undone; once mock() is called the classes are bricked until the
-    # app is restarted.
     for source in architrice.sources.sourcelist:
+        source._URL_BASE = source.URL_BASE
         source.URL_BASE = URL
     run()
