@@ -59,5 +59,9 @@ These cards where chosen to test the DFC handling of the app.
 ## Scryfall
 
 The card info gathering uses the Scryfall bulk data download, so this is mocked
-as well. The file `bulk-data/default-cards` contains the data for the cards in
-the test deck.
+as well. 
+
+* `bulk-data/default-cards` contains the information about where to find card
+    data.
+* `file/scryfall-bulk/default-cards/default-cards.json` contains the data for
+    the cards in the test deck.
