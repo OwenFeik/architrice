@@ -61,8 +61,6 @@ class TappedOut(source.Source):
             f"{TappedOut.URL_BASE}mtg-decks/{deck_id}/"
         ).content.decode()
 
-        with open(utils.DATA_DIR + "/tmp.html", "w") as f:
-            f.write(html)
         soup = bs4.BeautifulSoup(html, "html.parser")
 
         mtga_deck = soup.find(attrs={"id": "mtga-textarea"}).text
