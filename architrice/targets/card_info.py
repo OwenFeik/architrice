@@ -1,13 +1,11 @@
-import dataclasses
 import functools
 import logging
 import re
 
 import requests
 
-from architrice import deckreprs
-
 from .. import database
+from .. import deckreprs
 from .. import utils
 
 SCRYFALL_BULK_DATA_URL = "https://api.scryfall.com/bulk-data/default-cards"

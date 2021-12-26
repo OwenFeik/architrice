@@ -21,3 +21,6 @@ def get(name, error_on_fail=False):
     if error_on_fail:
         raise ValueError(f'No source matching "{name}" exists.')
     return None
+
+def get_all():
+    return list(map(lambda s: get(s.NAME), sourcelist))

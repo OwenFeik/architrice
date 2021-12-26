@@ -45,6 +45,13 @@ class OutputDir(database.StoredObject):
             f"id={self._id}>"
         )
 
+    def ensure_exists(self):
+        if os.path.isfile(self.path):
+            raise FileExistsError(f"Output directory {self.path} exists and is a file.")
+        
+        if not os.path.exists(self.path):
+            os.makedirs(self.path)
+
     def key(self, output, deck):
         return hash((output, deck))
 
@@ -128,7 +135,7 @@ class OutputDir(database.StoredObject):
 
         if path not in OutputDir.output_dirs:
             for output_dir in OutputDir.output_dirs.values():
-                if os.path.samefile(path, output_dir.path):
+                if os.path.exists(path) and os.path.samefile(path, output_dir.path):
                     return output_dir
 
             OutputDir.output_dirs[path] = OutputDir(
@@ -183,6 +190,8 @@ class Output(database.StoredObject):
         return deck_file
 
     def save_deck(self, deck):
+        self.output_dir.ensure_exists()
+
         self.target.save_deck(
             deck,
             os.path.join(
@@ -192,6 +201,8 @@ class Output(database.StoredObject):
         )
 
     def save_decks(self, decks):
+        self.output_dir.ensure_exists()
+
         deck_tuples = []
         for deck in decks:
             deck_file = self.get_updated_deck_file(deck)
@@ -468,7 +479,7 @@ class Cache:
         profile.delete_stored()
         logging.info(f"Deleted profile for {profile.user_string}.")
 
-    def build_profile(self, source, user, name):
+    def build_profile(self, source, user, name=None):
         return self.add_profile(Profile(User.get(user, source), name, []))
 
     def build_output(self, profile, target, path, include_maybe):

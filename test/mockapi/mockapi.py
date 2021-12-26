@@ -5,7 +5,7 @@ import os
 import threading
 import urllib
 
-SILENT = False
+SILENT = True
 
 DIRECTORY = os.path.join(os.path.dirname(__file__), "web")
 
@@ -31,8 +31,6 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         parts = urllib.parse.urlsplit(self.path)
 
         query_file = os.path.join(path, parts.query.replace("&", "_"))
-
-        print(query_file)
 
         if os.path.isfile(query_file):
             path = query_file
@@ -105,6 +103,7 @@ def run():
 
 def stop():
     server.shutdown()
+    server.server_close()
     thread.join()
 
     for source in architrice.sources.sourcelist:

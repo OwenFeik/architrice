@@ -55,3 +55,9 @@ These cards where chosen to test the DFC handling of the app.
 
 * `users/Test/mtg-decks` is the list of decks.
 * `mtg-decks/test-deck` is the test decklist.
+
+## Scryfall
+
+The card info gathering uses the Scryfall bulk data download, so this is mocked
+as well. The file `bulk-data/default-cards` contains the data for the cards in
+the test deck.
