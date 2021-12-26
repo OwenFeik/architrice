@@ -37,7 +37,9 @@ class Archidekt(source.Source):
         return self.deck_to_generic_format(
             deck_id,
             requests.get(
-                self.format_api_request(deck_id + "/" + "small/" if small else "/"),
+                self.format_api_request(
+                    deck_id + "/" + "small/" if small else "/"
+                ),
                 params={"format": "json"},
             ).json(),
         )
@@ -54,7 +56,9 @@ class Archidekt(source.Source):
 
     def _get_deck_list(self, username, allpages=True):
         decks = []
-        url = self.format_api_request(f"cards/?owner={username}&ownerexact=true")
+        url = self.format_api_request(
+            f"cards/?owner={username}&ownerexact=true"
+        )
         while url:
             j = requests.get(url).json()
             decks.extend(j["results"])

@@ -47,8 +47,10 @@ class OutputDir(database.StoredObject):
 
     def ensure_exists(self):
         if os.path.isfile(self.path):
-            raise FileExistsError(f"Output directory {self.path} exists and is a file.")
-        
+            raise FileExistsError(
+                f"Output directory {self.path} exists and is a file."
+            )
+
         if not os.path.exists(self.path):
             os.makedirs(self.path)
 
@@ -135,7 +137,9 @@ class OutputDir(database.StoredObject):
 
         if path not in OutputDir.output_dirs:
             for output_dir in OutputDir.output_dirs.values():
-                if os.path.exists(path) and os.path.samefile(path, output_dir.path):
+                if os.path.exists(path) and os.path.samefile(
+                    path, output_dir.path
+                ):
                     return output_dir
 
             OutputDir.output_dirs[path] = OutputDir(

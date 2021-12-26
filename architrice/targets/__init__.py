@@ -24,5 +24,6 @@ def get(name, error_on_fail=False):
         raise ValueError(f'No target matching "{name}" exists.')
     return None
 
+
 def get_all():
     return list(map(lambda t: get(t.NAME), targetlist))

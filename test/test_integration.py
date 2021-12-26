@@ -6,6 +6,7 @@ import architrice
 
 from . import mockapi
 
+
 class TestIntegration(unittest.TestCase):
     TEST_USER_NAME = "Test"
     TEST_DECK_NAME = "Test Deck"
@@ -13,7 +14,7 @@ class TestIntegration(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.directory = tempfile.mkdtemp()
-        architrice.utils._DATA_DIR = architrice.utils.DATA_DIR 
+        architrice.utils._DATA_DIR = architrice.utils.DATA_DIR
         architrice.utils.DATA_DIR = os.path.join(cls.directory, "architrice")
         architrice.database.init()
         mockapi.mock()
@@ -35,14 +36,16 @@ class TestIntegration(unittest.TestCase):
 
         for source in architrice.sources.get_all():
             self.assertTrue(source.verify_user(TestIntegration.TEST_USER_NAME))
-            profile = cache.build_profile(source, TestIntegration.TEST_USER_NAME)
-            
+            profile = cache.build_profile(
+                source, TestIntegration.TEST_USER_NAME
+            )
+
             for target in architrice.targets.get_all():
                 cache.build_output(
                     profile,
                     target,
                     os.path.join(deck_dir, source.short, target.short),
-                    True
+                    True,
                 )
 
             profile.download_all()
@@ -52,10 +55,13 @@ class TestIntegration(unittest.TestCase):
                     os.path.exists(
                         os.path.join(
                             output.output_dir.path,
-                            output.target.create_file_name(TestIntegration.TEST_DECK_NAME)
+                            output.target.create_file_name(
+                                TestIntegration.TEST_DECK_NAME
+                            ),
                         )
                     )
                 )
+
 
 if __name__ == "__main__":
     unittest.main()

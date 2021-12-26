@@ -20,7 +20,7 @@ setuptools.setup(
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Development Status :: 3 - Alpha",
         "Operating System :: POSIX",
-        "Operating System :: Microsoft :: Windows"
+        "Operating System :: Microsoft :: Windows",
     ],
-    python_requires=">=3.7"
+    python_requires=">=3.7",
 )
