@@ -381,11 +381,12 @@ class Profile(database.StoredObject):
 
     # This is asynchronous so that it can use a ThreadPoolExecutor to speed up
     # perfoming many deck requests.
-    async def download_decks_pool(self, loop, deck_ids):
+    async def download_decks_pool(self, deck_ids):
         logging.info(
             f"Downloading {len(deck_ids)} decks for {self.user_string}."
         )
 
+        loop = asyncio.get_event_loop()
         with concurrent.futures.ThreadPoolExecutor(
             max_workers=Profile.THREAD_POOL_MAX_WORKERS
         ) as executor:
@@ -407,9 +408,7 @@ class Profile(database.StoredObject):
         for output in self.outputs:
             decks_to_update.update(output.decks_to_update(deck_list))
 
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self.download_decks_pool(loop, decks_to_update))
-
+        asyncio.run(self.download_decks_pool(decks_to_update))
         logging.info(f"Successfully updated all decks for {self.user_string}.")
 
     def download_latest(self):
