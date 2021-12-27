@@ -1,0 +1,2 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Deck xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><NetDeckID>0</NetDeckID><PreconstructedDeckID>0</PreconstructedDeckID><Cards CatID="83343" Quantity="1" Sideboard="false" Name="Bala Ged Recovery" Annotation="0" /><Cards CatID="46099" Quantity="1" Sideboard="false" Name="Life" Annotation="0" /><Cards CatID="89631" Quantity="1" Sideboard="false" Name="Sol Ring" Annotation="0" /><Cards CatID="88777" Quantity="1" Sideboard="true" Name="Blex, Vexing Pest" Annotation="0" /></Deck>
