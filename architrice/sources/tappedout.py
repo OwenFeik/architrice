@@ -23,7 +23,7 @@ class TappedOut(source.Source):
         for line in mtga_string.split("\n"):
             m = TappedOut.MTGA_CARD_REGEX.match(line)
             if m:
-                cards.append((m.group("qty"), m.group("name")))
+                cards.append((int(m.group("qty")), m.group("name")))
         return cards
 
     def deck_to_generic_format(

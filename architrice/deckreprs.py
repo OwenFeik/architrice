@@ -37,6 +37,10 @@ class Deck(DeckDetails):
     def __repr__(self):
         return super().__repr__().replace("<DeckDetails", "<Deck")
 
+    def sort_cards(self, cards):
+        # Sort alphabetically by card name
+        return sorted(cards, key=lambda c: c[1])
+
     def get_card_names(self, board):
         return [c[1] for c in self.get_board(board)]
 
@@ -49,9 +53,11 @@ class Deck(DeckDetails):
         )
 
     def get_main_deck(self, include_commanders=False):
+        main_deck = self.main
         if include_commanders:
-            return self.main + self.commanders
-        return self.main
+            main_deck += self.commanders
+
+        return self.sort_cards(main_deck)
 
     def get_sideboard(self, include_commanders=True, include_maybe=True):
         sideboard = self.side[:]
@@ -59,20 +65,22 @@ class Deck(DeckDetails):
             sideboard += self.commanders
         if include_maybe:
             sideboard += self.maybe
-        return sideboard
+        return self.sort_cards(sideboard)
 
     def get_board(self, board, default="main"):
         board = board.strip().lower()
         if board == "commanders":
-            return self.commanders
+            cards = self.commanders
         elif board in ["maybe", "maybeboard"]:
-            return self.maybe
+            cards = self.maybe
         elif board in ["side", "sideboard"]:
-            return self.side
+            cards = self.side
         elif board in ["main", "maindeck", "mainboard"]:
-            return self.main
+            cards = self.main
         else:
             return self.get_board(default)
+
+        return self.sort_cards(cards)
 
     def add_card(self, card, board):
         self.get_board(board).append(card)
