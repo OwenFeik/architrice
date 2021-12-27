@@ -30,6 +30,13 @@ class Target(database.KeyStoredObject, abc.ABC):
     def _save_deck(self, deck, path, include_maybe=False, card_info_map=None):
         """Writes deck to path in format using card_info_map."""
 
+    def front_face_name(self, name, card_info_map=None):
+        if card_info_map and name in card_info_map:
+            card = card_info_map[name]
+            if card.is_dfc:
+                return name.partition("//")[0].strip()
+        return name
+
     def save_deck(self, deck, path, include_maybe=False, card_info_map=None):
         if card_info_map is None:
             card_info_map = card_info.map_from_deck(deck)

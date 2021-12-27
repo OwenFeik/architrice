@@ -35,43 +35,31 @@ class Cockatrice(target.Target):
         return Cockatrice.DECK_DIRECTORY
 
     def _save_deck(self, deck, path, include_maybe=False, card_info_map=None):
-        deck_to_xml(deck, path, include_maybe, card_info_map)
+        self.deck_to_xml(deck, path, include_maybe, card_info_map)
 
 
-def front_face_name(name):
-    return name.partition("//")[0].strip()
+    def deck_to_xml(self, deck, outfile, include_maybe, card_info_map=None):
+        root = et.Element("cockatrice_deck", version="1")
 
+        et.SubElement(root, "deckname").text = deck.name
+        et.SubElement(root, "comments").text = deck.description
 
-def cockatrice_name(name, card_info_map):
-    if name in card_info_map:
-        card = card_info_map[name]
-        if card and card.is_dfc:
-            return front_face_name(name)
-    return name
+        main = et.SubElement(root, "zone", name="main")
+        side = et.SubElement(root, "zone", name="side")
 
+        for quantity, name in deck.get_main_deck():
+            et.SubElement(
+                main,
+                "card",
+                number=str(quantity),
+                name=self.front_face_name(name, card_info_map),
+            )
+        for quantity, name in deck.get_sideboard(include_maybe=include_maybe):
+            et.SubElement(
+                side,
+                "card",
+                number=str(quantity),
+                name=self.front_face_name(name, card_info_map),
+            )
 
-def deck_to_xml(deck, outfile, include_maybe, card_info_map=None):
-    root = et.Element("cockatrice_deck", version="1")
-
-    et.SubElement(root, "deckname").text = deck.name
-    et.SubElement(root, "comments").text = deck.description
-
-    main = et.SubElement(root, "zone", name="main")
-    side = et.SubElement(root, "zone", name="side")
-
-    for quantity, name in deck.get_main_deck():
-        et.SubElement(
-            main,
-            "card",
-            number=str(quantity),
-            name=cockatrice_name(name, card_info_map),
-        )
-    for quantity, name in deck.get_sideboard(include_maybe=include_maybe):
-        et.SubElement(
-            side,
-            "card",
-            number=str(quantity),
-            name=cockatrice_name(name, card_info_map),
-        )
-
-    et.ElementTree(root).write(outfile, xml_declaration=True, encoding="UTF-8")
+        et.ElementTree(root).write(outfile, xml_declaration=True, encoding="UTF-8")

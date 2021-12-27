@@ -15,9 +15,6 @@ class XMage(target.Target):
     def __init__(self):
         super().__init__(XMage.NAME, XMage.SHORT, XMage.FILE_EXTENSION)
 
-    def xmage_name(self, name):
-        return name.partition("//")[0].strip()
-
     def format_card_list(self, card_info_map, card_list, sideboard=False):
         format_string = (
             XMage.SIDEBOARD_FORMAT if sideboard else XMage.MAIN_DECK_FORMAT
@@ -33,7 +30,7 @@ class XMage(target.Target):
                 quantity,
                 info.edition.upper(),
                 info.collector_number,
-                self.xmage_name(name),
+                self.front_face_name(name, card_info_map),
             )
 
         return card_list_string
