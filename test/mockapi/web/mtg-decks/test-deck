@@ -13,8 +13,7 @@
 <meta property="og:type" content="tappedout:deck" />
 <meta property="og:site_name" content="TappedOut" />
 <meta property="og:title" content="MTG Deck: Test Deck" />
-<meta property="og:description" content="Test deck
-" />
+<meta property="og:description" content="" />
 <meta property="og:image" content="//static.tappedout.net/chart/0-0-25-0-75.png" />
 <meta property="og:url" content="http://tappedout.net/mtg-decks/test-deck/" />
 
@@ -22,7 +21,7 @@
         
         
         <title>Test Deck (Commander / EDH MTG Deck)</title>
-        <meta name="Description" content="Updated Dec 24, 2021 by Test using our MTG Deck Builder.  Test deck" />
+        <meta name="Description" content="Updated Dec 24, 2021 by Test using our MTG Deck Builder.  Test Deck" />
         <meta name="Keywords" content="mtg deck builder, mtg decks, Test Deck, edh" />
         
         
@@ -1857,7 +1856,7 @@ $("#compare-deck-btn").click(function(e){
                         <div class="add-img-responsive add-embed-responsive">
                             
                             
-                            <p>Test deck</p>
+                            <p>Test Deck</p>
 
                             
                             

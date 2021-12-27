@@ -6,16 +6,17 @@
             "amount_nonbasic": 4,
             "cards": [
                 {
+                    "name": "Blex, Vexing Pest \/\/ Search for Blex",
+                    "amount": 1,
+                    "valid": true,
+                    "idprintings": 63706,
+                    "isCommander": true
+                },
+                {
                     "name": "Bala Ged Recovery \/\/ Bala Ged Sanctuary",
                     "amount": 1,
                     "valid": true,
                     "idprintings": 58032
-                },
-                {
-                    "name": "Blex, Vexing Pest \/\/ Search for Blex",
-                    "amount": 1,
-                    "valid": true,
-                    "idprintings": 63706
                 },
                 {
                     "name": "Life \/\/ Death",
@@ -41,7 +42,7 @@
     "tokens": [
         
     ],
-    "saved_id": 2367426,
+    "saved_id": 1,
     "name": "Test Deck",
     "folder_id": 0,
     "is_public": true,

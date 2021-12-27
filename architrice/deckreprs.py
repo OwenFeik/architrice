@@ -68,19 +68,20 @@ class Deck(DeckDetails):
         return self.sort_cards(sideboard)
 
     def get_board(self, board, default="main"):
+        # Note: this is to be used to add cards, not to retrieve them, as it
+        # doesn't return the cards in sorted order.
+
         board = board.strip().lower()
         if board == "commanders":
-            cards = self.commanders
+            return self.commanders
         elif board in ["maybe", "maybeboard"]:
-            cards = self.maybe
+            return self.maybe
         elif board in ["side", "sideboard"]:
-            cards = self.side
+            return self.side
         elif board in ["main", "maindeck", "mainboard"]:
-            cards = self.main
+            return self.main
         else:
             return self.get_board(default)
-
-        return self.sort_cards(cards)
 
     def add_card(self, card, board):
         self.get_board(board).append(card)

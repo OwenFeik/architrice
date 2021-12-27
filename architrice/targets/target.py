@@ -10,13 +10,12 @@ from . import card_info
 class Target(database.KeyStoredObject, abc.ABC):
     SUPPORTS_RELNK = False
 
-    def __init__(self, name, short, file_extension, needs_card_info=True):
+    def __init__(self, name, short, file_extension):
         database.KeyStoredObject.__init__(self, short)
 
         self.name = name
         self.short = short
         self.file_extension = file_extension
-        self.needs_card_info = needs_card_info
         self.mtgo_id_required = False
 
     def suggest_directory(self):
@@ -32,7 +31,7 @@ class Target(database.KeyStoredObject, abc.ABC):
         """Writes deck to path in format using card_info_map."""
 
     def save_deck(self, deck, path, include_maybe=False, card_info_map=None):
-        if card_info_map is None and self.needs_card_info:
+        if card_info_map is None:
             card_info_map = card_info.map_from_deck(deck)
         self._save_deck(deck, path, include_maybe, card_info_map)
 

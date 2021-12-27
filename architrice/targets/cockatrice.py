@@ -29,7 +29,6 @@ class Cockatrice(target.Target):
             Cockatrice.NAME,
             Cockatrice.SHORT,
             Cockatrice.DECK_FILE_EXTENSION,
-            True,
         )
 
     def suggest_directory(self):

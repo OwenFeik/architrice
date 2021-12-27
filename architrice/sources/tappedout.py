@@ -76,6 +76,7 @@ class TappedOut(source.Source):
             soup.find("meta", attrs={"property": "og:title"})
             .get("content")
             .replace(PAGE_TITLE_PREFIX, "")
+            .strip()
         )
 
         description = soup.find(

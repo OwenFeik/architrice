@@ -4,7 +4,6 @@ import xml.etree.cElementTree as et
 
 from .. import utils
 
-from . import card_info
 from . import target
 
 
