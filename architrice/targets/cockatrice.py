@@ -37,7 +37,6 @@ class Cockatrice(target.Target):
     def _save_deck(self, deck, path, include_maybe=False, card_info_map=None):
         self.deck_to_xml(deck, path, include_maybe, card_info_map)
 
-
     def deck_to_xml(self, deck, outfile, include_maybe, card_info_map=None):
         root = et.Element("cockatrice_deck", version="1")
 
@@ -62,4 +61,6 @@ class Cockatrice(target.Target):
                 name=self.front_face_name(name, card_info_map),
             )
 
-        et.ElementTree(root).write(outfile, xml_declaration=True, encoding="UTF-8")
+        et.ElementTree(root).write(
+            outfile, xml_declaration=True, encoding="UTF-8"
+        )
