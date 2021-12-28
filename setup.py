@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
 
 setuptools.setup(
     name="architrice",
-    version="0.0.7",
+    version="0.0.8",
     url="https://github.com/OwenFeik/architrice.git",
     author="Owen Feik",
     author_email="owen.h.feik@gmail.com",
@@ -13,7 +13,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
-    download_url="https://github.com/OwenFeik/architrice/archive/refs/tags/0.0.7.tar.gz",
+    download_url="https://github.com/OwenFeik/architrice/archive/refs/tags/0.0.8.tar.gz",
     install_requires=["requests", "bs4"],
     classifiers=[
         "Programming Language :: Python :: 3.7",

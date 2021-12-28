@@ -12,7 +12,8 @@ Architrice currently supports the following deckbuilding websites
 * Moxfield
 * Tapped Out
 
-and the following MtG clients
+Only your public decks can be seen and downloaded by Architrice.
+Architrice can output for the following MtG clients
 
 * Cockatrice (.cod)
 * Generic (.txt)
@@ -31,10 +32,9 @@ python -m architrice -a -s website_name -u website_username -t target_program \
     -p /path/to/deck/directory -n profile_name
 ```
 To remove a configured profile use `python -m architrice -d` for a wizard, or
-specify a unique subset of source, user, target, path and name as above. To add
-another profile use `-a` . For detailed help, use `python -m architrice -h` .
-
-Only your public decks can be seen and downloaded by Architrice.
+specify a unique combination of source, user, target, path and name as above.
+To add another profile use `-a` . For detailed help, use
+`python -m architrice -h` .
 
 Flags to filter or provide details of profiles:
 
@@ -62,4 +62,5 @@ Flags to modify behaviour:
 * `-i` (`--non-interactive`) : prevent input prompts, for scripting.
 * `-k` (`--skip-update`) : don't update decks on this run.
 * `-r` (`--relink`) : set up shortcuts to start architrice with other 
-    applications.
+    applications. Note: this feature is in beta and isn't available for all
+    clients.
