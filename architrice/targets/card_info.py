@@ -27,7 +27,66 @@ def wildcard_vowels(name):
     return re.sub(r"[aeiou]", r"_", name)
 
 
+def card_info_tuple(card_json):
+    dfc_layouts = ["meld", "modal_dfc", "transform"]
+    return (
+        card_json["name"],
+        card_json.get("mtgo_id"),
+        card_json["layout"] in dfc_layouts,
+        card_json["collector_number"],
+        card_json["set"],
+        card_json["reprint"],
+    )
+
+
+def save_card_info(data):
+    if data["object"] != "list":
+        if data["object"] == "card":
+            data = [data]
+        else:
+            return
+
+    disallowed_layouts = [
+        "art_series",
+        "double_faced_token",
+        "emblem",
+        "planar",
+        "scheme",
+        "token",
+        "vanguard",
+    ]
+
+    # Tuple format:
+    # (name, mtgo_id, is_dfc, collector_number, edition, reprint)
+
+    records = []
+
+    # Relatively slow way to do it but as it only needs to happen rarely and
+    # is paired with a download anyway it isn't really worth optimising.
+    for card in data:
+        if card["layout"] in disallowed_layouts:
+            continue
+
+        records.append(card_info_tuple(card))
+
+    database.insert_many_tuples(
+        "cards",
+        [
+            "name",
+            "mtgo_id",
+            "is_dfc",
+            "collector_number",
+            "edition",
+            "reprint",
+        ],
+        records,
+        conflict="ignore",
+    )
+    database.commit()
+
+
 # Note: this should only be called from one thread at a time.
+# Returns bool indicating whether the database was actually updated.
 def update_card_list():
     time, url = (
         database.select_one(
@@ -38,7 +97,7 @@ def update_card_list():
         or (0, None)
     )
     if utils.time_now() - time < CARD_LIST_UPDATE_INTERVAL:
-        return
+        return False
 
     download_info = requests.get(SCRYFALL_BULK_DATA_URL).json()
 
@@ -58,60 +117,26 @@ def update_card_list():
         + str(download_info["compressed_size"])
         + " bytes."
     )
-    logging.info("This may take a couple of minutes.")
+
     # ~30MB download, ~230MB uncompressed
+    logging.info("This may take a couple of minutes.")
     data = requests.get(download_info["download_uri"]).json()
 
-    disallowed_layouts = [
-        "art_series",
-        "double_faced_token",
-        "emblem",
-        "planar",
-        "scheme",
-        "token",
-        "vanguard",
-    ]
-
-    dfc_layouts = ["meld", "modal_dfc", "transform"]
-
-    # Tuple format:
-    # (name, mtgo_id, is_dfc, collector_number, edition, reprint)
-
-    records = []
-
-    # Relatively slow way to do it but as it only needs to happen rarely and
-    # is paired with a download anyway it isn't really worth optimising.
-    for card in data:
-        if card["layout"] in disallowed_layouts:
-            continue
-
-        records.append(
-            (
-                card["name"],
-                card.get("mtgo_id"),
-                card["layout"] in dfc_layouts,
-                card["collector_number"],
-                card["set"],
-                card["reprint"],
-            )
-        )
-
-    database.insert_many_tuples(
-        "cards",
-        [
-            "name",
-            "mtgo_id",
-            "is_dfc",
-            "collector_number",
-            "edition",
-            "reprint",
-        ],
-        records,
-        conflict="ignore",
-    )
-    database.commit()
+    save_card_info(data)
 
     logging.info("Card database update complete.")
+
+    return True
+
+
+def update_single(name):
+    URL_BASE = "https://api.scryfall.com/cards/search"
+    resp = requests.get(URL_BASE, params={"q": f"!{name}", "unique": "prints"})
+
+    if resp.status == 200:
+        logging.info(f"Downloaded card data for {name}")
+        data = resp.json()
+        save_card_info(data)
 
 
 @functools.lru_cache(maxsize=None)  # cache to save repeated db queries
@@ -154,7 +179,9 @@ def find(name, mtgo_id_required=False, update_if_necessary=True):
 
     if update_if_necessary:
         logging.debug(f"Missing card info for {name}. Updating database.")
-        update_card_list()
+
+        if not update_card_list():
+            update_single(name)
         return find(
             name, mtgo_id_required=mtgo_id_required, update_if_necessary=False
         )
