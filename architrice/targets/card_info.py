@@ -40,9 +40,11 @@ def card_info_tuple(card_json):
 
 
 def save_card_info(data):
-    if data["object"] != "list":
+    if not isinstance(data, list):
         if data["object"] == "card":
             data = [data]
+        elif data["object"] == "list":
+            data = data["data"]
         else:
             return
 
@@ -131,12 +133,18 @@ def update_card_list():
 
 def update_single(name):
     URL_BASE = "https://api.scryfall.com/cards/search"
-    resp = requests.get(URL_BASE, params={"q": f"!{name}", "unique": "prints"})
+    resp = requests.get(
+        URL_BASE, params={"q": f'!"{name}"', "unique": "prints"}
+    )
 
-    if resp.status == 200:
-        logging.info(f"Downloaded card data for {name}")
+    if resp.status_code == 200:
+        logging.info(f"Downloaded card data for {name}.")
         data = resp.json()
         save_card_info(data)
+    elif resp.status_code != 404:
+        logging.error(
+            f"Failed to query card data for {name}. Status: {resp.status_code}."
+        )
 
 
 @functools.lru_cache(maxsize=None)  # cache to save repeated db queries
