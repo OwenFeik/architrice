@@ -116,7 +116,7 @@ def update_card_list():
 
     logging.info(
         "Downloading Scryfall card list for card data. Download size: "
-        + str(download_info["compressed_size"])
+        + str(download_info.get("size"))
         + " bytes."
     )
 

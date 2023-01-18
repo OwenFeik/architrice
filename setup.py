@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
 
 setuptools.setup(
     name="architrice",
-    version="0.0.8",
+    version="0.0.9",
     url="https://github.com/OwenFeik/architrice.git",
     author="Owen Feik",
     author_email="owen.h.feik@gmail.com",
