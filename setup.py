@@ -18,7 +18,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
-    download_url="https://github.com/OwenFeik/architrice/archive/refs/tags/0.0.8.tar.gz",
+    download_url="https://github.com/OwenFeik/architrice/archive/refs/tags/0.1.0.tar.gz",
     install_requires=["requests", "bs4"],
     classifiers=[
         "Programming Language :: Python :: 3.7",
