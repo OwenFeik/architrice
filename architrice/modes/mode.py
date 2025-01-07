@@ -48,6 +48,7 @@ class Mode:
         elif arg == "target":
             return common.get_target(args.target, args.interactive)
         elif arg == "user":
+            args.source.ensure_setup(args.interactive, cache)
             return common.get_verified_user(
                 args.source, args.user, args.interactive
             )

@@ -10,6 +10,7 @@ class Sync(mode.FilterArgsMode):
     def action(self, cache, args):
         if args.profiles:
             for profile in args.profiles:
+                profile.source.ensure_setup(args.interactive, cache)
                 profile.download_all()
         else:
             logging.info(

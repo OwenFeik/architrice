@@ -1,11 +1,16 @@
 import setuptools
 
+with open("architrice/__init__.py", "r") as f:
+    for line in f:
+        if "__version__" in line:
+            version = line.split("=")[1].strip().replace('"', "")
+
 with open("README.md", "r") as f:
     long_description = f.read()
 
 setuptools.setup(
     name="architrice",
-    version="0.0.9",
+    version=version,
     url="https://github.com/OwenFeik/architrice.git",
     author="Owen Feik",
     author_email="owen.h.feik@gmail.com",

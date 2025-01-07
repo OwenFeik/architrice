@@ -27,7 +27,7 @@ class Source(database.KeyStoredObject, abc.ABC):
 
     @abc.abstractmethod
     def _get_deck(self, deck_id):
-        pass
+        raise NotImplementedError()
 
     def get_deck(self, deck_id):
         """Download as `Deck` the deck with id `deck_id` from this source."""
@@ -37,7 +37,7 @@ class Source(database.KeyStoredObject, abc.ABC):
 
     @abc.abstractmethod
     def _get_deck_list(self, username):
-        pass
+        raise NotImplementedError()
 
     def get_deck_list(self, username):
         """Get a list of `DeckUpdate` for all public decks of `username`."""
@@ -69,7 +69,7 @@ class Source(database.KeyStoredObject, abc.ABC):
 
     @abc.abstractmethod
     def _verify_user(self, username):
-        pass
+        raise NotImplementedError()
 
     def verify_user(self, username):
         """Verify that user `username` has an account with this source."""
@@ -85,3 +85,10 @@ class Source(database.KeyStoredObject, abc.ABC):
         return deckreprs.DeckUpdate(
             deckreprs.DeckDetails(deck_id, self.short), time
         )
+    
+    def ensure_setup(self, interactive, cache):
+        """Ensure any source-wide setup is complete, throwing on failure."""
+        
+        # By default, do nothing. Optionally inheriting sources may perform
+        # setup or check that setup is complete.
+        pass

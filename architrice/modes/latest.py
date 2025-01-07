@@ -10,6 +10,7 @@ class Latest(mode.FilterArgsMode):
     def action(self, cache, args):
         if cache.profiles:
             for profile in cache.profiles:
+                profile.source.ensure_setup(args.interactive, cache)
                 profile.download_latest()
         else:
             logging.info(

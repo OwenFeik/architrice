@@ -12,7 +12,7 @@ DATABASE_FILE = "architrice.db"
 
 
 class Database:
-    USER_VERSION = 1
+    USER_VERSION = 2
 
     def __init__(self, tables=None):
         self.conn = None
@@ -51,6 +51,11 @@ class Database:
             logging.debug("Migrating database from version 0 to version 1.")
             self.execute("ALTER TABLE outputs ADD COLUMN include_maybe INTEGER")
             self.execute("PRAGMA user_version = 1;")
+            version = 1
+        if version == 1:
+            logging.debug("Migrating database from version 1 to version 2.")
+            self.add_table(self.tables["string_values"], True)
+            version = 2
 
     def add_table(self, table, create=False):
         """Add a Table to the database, creating it if necessary."""
@@ -218,6 +223,9 @@ class Column:
             column_def += f" REFERENCES {self.references} ON DELETE CASCADE"
         return column_def
 
+    @staticmethod
+    def foreign_key(name, datatype):
+        return Column(name, datatype, references=name + "s", not_null=True)
 
 class Table:
     def __init__(self, name, columns, constraints=None, db=None):
@@ -615,6 +623,13 @@ database = Database(
                 Column("id", "INTEGER", primary_key=True),
                 Column("time", "INTEGER", not_null=True),
                 Column("data", "TEXT"),
+            ],
+        ),
+        Table(
+            "string_values",
+            [
+                Column("key", "TEXT", unique=True, not_null=True),
+                Column("value", "TEXT"),
             ],
         ),
     ],
