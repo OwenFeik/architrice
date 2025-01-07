@@ -6,6 +6,7 @@ from .. import utils
 
 from . import target
 
+
 # TODO Desktop/cockatrice_portable/data/decks
 class Cockatrice(target.Target):
     NAME = "Cockatrice"

@@ -508,10 +508,10 @@ class Cache:
     def load_string_value(self, key):
         tup = database.select_one("string_values", key=key)
         if tup:
-            return tup[1] # (key, value)
+            return tup[1]  # (key, value)
         else:
             return None
-        
+
     def save_string_value(self, key, value):
         database.upsert("string_values", key=key, value=value)
 

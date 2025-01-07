@@ -90,14 +90,11 @@ def save_card_info(data):
 # Note: this should only be called from one thread at a time.
 # Returns bool indicating whether the database was actually updated.
 def update_card_list():
-    time, url = (
-        database.select_one(
-            "database_events",
-            ["time", "data"],
-            id=database.DatabaseEvents.CARD_LIST_UPDATE.value,
-        )
-        or (0, None)
-    )
+    time, url = database.select_one(
+        "database_events",
+        ["time", "data"],
+        id=database.DatabaseEvents.CARD_LIST_UPDATE.value,
+    ) or (0, None)
     if utils.time_now() - time < CARD_LIST_UPDATE_INTERVAL:
         return False
 

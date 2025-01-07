@@ -85,10 +85,10 @@ class Source(database.KeyStoredObject, abc.ABC):
         return deckreprs.DeckUpdate(
             deckreprs.DeckDetails(deck_id, self.short), time
         )
-    
+
     def ensure_setup(self, interactive, cache):
         """Ensure any source-wide setup is complete, throwing on failure."""
-        
+
         # By default, do nothing. Optionally inheriting sources may perform
         # setup or check that setup is complete.
         pass

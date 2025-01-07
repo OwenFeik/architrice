@@ -25,7 +25,7 @@ class Moxfield(source.Source):
         self._printed_user_agent_message = False
 
     def _request(self, url, *, params=None):
-        delta = time.time() - self._last_request_time 
+        delta = time.time() - self._last_request_time
         wait_time = round(1.0 - delta, 2)
         if wait_time > 0.0:
             if not self._logged_wait:
@@ -39,9 +39,9 @@ class Moxfield(source.Source):
             time.sleep(wait_time)
         self._last_request_time = time.time()
 
-        return requests.get(url, params=params, headers={
-            "User-Agent": self._user_agent
-        })
+        return requests.get(
+            url, params=params, headers={"User-Agent": self._user_agent}
+        )
 
     def parse_to_cards(self, board):
         cards = []
@@ -104,7 +104,7 @@ class Moxfield(source.Source):
 
     def ensure_setup(self, interactive, cache):
         if not self._user_agent:
-            self._user_agent = cache.load_string_value(Moxfield.USER_AGENT_KEY) 
+            self._user_agent = cache.load_string_value(Moxfield.USER_AGENT_KEY)
         if not self._user_agent:
             if interactive:
                 if not self._printed_user_agent_message:
@@ -125,7 +125,7 @@ class Moxfield(source.Source):
                 else:
                     cache.save_string_value(
                         Moxfield.USER_AGENT_KEY, self._user_agent
-                        )
+                    )
             else:
                 raise ValueError(
                     "Missing Moxfield user agent and unable to retrieve it "

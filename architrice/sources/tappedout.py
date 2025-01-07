@@ -98,13 +98,17 @@ class TappedOut(source.Source):
             string,
         )
         if m:
-            return now - int(m.group("n")) * {
-                "minute": 60,
-                "hour": 60 * 60,
-                "day": 60 * 60 * 24,
-                "month": 60 * 60 * 24 * 28,
-                "year": 60 * 60 * 24 * 365,
-            }[m.group("unit")]
+            return (
+                now
+                - int(m.group("n"))
+                * {
+                    "minute": 60,
+                    "hour": 60 * 60,
+                    "day": 60 * 60 * 24,
+                    "month": 60 * 60 * 24 * 28,
+                    "year": 60 * 60 * 24 * 365,
+                }[m.group("unit")]
+            )
         return now
 
     def get_page_count(self, soup):
