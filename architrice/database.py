@@ -55,6 +55,7 @@ class Database:
         if version == 1:
             logging.debug("Migrating database from version 1 to version 2.")
             self.add_table(self.tables["string_values"], True)
+            self.execute("PRAGMA user_version = 2;")
             version = 2
 
     def add_table(self, table, create=False):
@@ -628,7 +629,7 @@ database = Database(
         Table(
             "string_values",
             [
-                Column("key", "TEXT", unique=True, not_null=True),
+                Column("key", "TEXT", primary_key=True),
                 Column("value", "TEXT"),
             ],
         ),
