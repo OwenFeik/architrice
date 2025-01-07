@@ -15,6 +15,11 @@ class Moxfield(source.Source):
     def __init__(self):
         super().__init__(Moxfield.NAME, Moxfield.SHORT)
 
+    def _request(self, url, *, params=None):
+        return requests.get(url, params=params, headers={
+            "User-Agent": "TODO RETRIEVE AT ACCOUNT CREATION"
+        })
+
     def parse_to_cards(self, board):
         cards = []
         for k in board:
@@ -38,7 +43,7 @@ class Moxfield(source.Source):
     def _get_deck(self, deck_id):
         return self.deck_to_generic_format(
             deck_id,
-            requests.get(f"{Moxfield.URL_BASE}v2/decks/all/{deck_id}").json(),
+            self._request(f"{Moxfield.URL_BASE}v2/decks/all/{deck_id}").json(),
         )
 
     def deck_list_to_generic_format(self, decks):
@@ -56,7 +61,7 @@ class Moxfield(source.Source):
         decks = []
         i = 1
         while True:
-            j = requests.get(
+            j = self._request(
                 f"{Moxfield.URL_BASE}v2/users/{username}/decks",
                 params={
                     "pageSize": Moxfield.DECK_LIST_PAGE_SIZE,
@@ -71,7 +76,5 @@ class Moxfield(source.Source):
         return self.deck_list_to_generic_format(decks)
 
     def _verify_user(self, username):
-        return (
-            requests.get(f"{Moxfield.URL_BASE}v1/users/{username}").status_code
-            == Moxfield.REQUEST_OK
-        )
+        resp = self._request(f"{Moxfield.URL_BASE}v1/users/{username}")
+        return resp.status_code == Moxfield.REQUEST_OK
