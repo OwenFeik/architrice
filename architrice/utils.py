@@ -5,6 +5,7 @@ import os
 import re
 import sys
 
+from .version import __version__
 
 APP_NAME = "architrice"
 DEBUG = False
@@ -89,6 +90,10 @@ def check_dir(path):
         os.makedirs(path)
         logging.info(f"Created output directory {path}.")
     return True
+
+
+def user_agent():
+    return f"{APP_NAME} {__version__}"
 
 
 # Chunk an iterable into n size chunks

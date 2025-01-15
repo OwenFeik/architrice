@@ -1,6 +1,6 @@
 import setuptools
 
-with open("architrice/__init__.py", "r") as f:
+with open("architrice/version.py", "r") as f:
     for line in f:
         if "__version__" in line:
             version = line.split("=")[1].strip().replace('"', "")
@@ -8,17 +8,19 @@ with open("architrice/__init__.py", "r") as f:
 with open("README.md", "r") as f:
     long_description = f.read()
 
+GITHUB_URL = "https://github.com/OwenFeik/architrice"
+
 setuptools.setup(
     name="architrice",
     version=version,
-    url="https://github.com/OwenFeik/architrice.git",
+    url=GITHUB_URL,
     author="Owen Feik",
     author_email="owen.h.feik@gmail.com",
     description="Utility to sync MtG decklists with online sources.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
-    download_url="https://github.com/OwenFeik/architrice/archive/refs/tags/0.1.0.tar.gz",
+    download_url=f"{GITHUB_URL}/archive/refs/tags/{version}.tar.gz",
     install_requires=["requests", "bs4"],
     classifiers=[
         "Programming Language :: Python :: 3.7",
