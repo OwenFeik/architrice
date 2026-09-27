@@ -9,6 +9,13 @@ from .. import deckreprs
 from .. import utils
 
 SCRYFALL_BULK_DATA_URL = "https://api.scryfall.com/bulk-data/default-cards"
+# Scryfall requires API clients to send a descriptive User-Agent and an
+# Accept header; requests using the default requests User-Agent are rejected
+# with HTTP 400 (generic_user_agent).
+SCRYFALL_HEADERS = {
+    "User-Agent": "architrice (+https://github.com/OwenFeik/architrice)",
+    "Accept": "application/json",
+}
 # Scryfall updates its card list every 24 hours.
 # We will update no more frequently than this as it is a large download.
 CARD_LIST_UPDATE_INTERVAL = 60 * 60 * 24
@@ -98,7 +105,7 @@ def update_card_list():
     if utils.time_now() - time < CARD_LIST_UPDATE_INTERVAL:
         return False
 
-    download_info = requests.get(SCRYFALL_BULK_DATA_URL).json()
+    download_info = requests.get(SCRYFALL_BULK_DATA_URL, headers=SCRYFALL_HEADERS).json()
 
     database.upsert(
         "database_events",
@@ -119,7 +126,7 @@ def update_card_list():
 
     # ~30MB download, ~230MB uncompressed
     logging.info("This may take a couple of minutes.")
-    data = requests.get(download_info["download_uri"]).json()
+    data = requests.get(download_info["download_uri"], headers=SCRYFALL_HEADERS).json()
 
     save_card_info(data)
 
@@ -131,7 +138,9 @@ def update_card_list():
 def update_single(name):
     URL_BASE = "https://api.scryfall.com/cards/search"
     resp = requests.get(
-        URL_BASE, params={"q": f'!"{name}"', "unique": "prints"}
+        URL_BASE,
+        params={"q": f'!"{name}"', "unique": "prints"},
+        headers=SCRYFALL_HEADERS,
     )
 
     if resp.status_code == 200:
