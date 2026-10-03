@@ -1,4 +1,6 @@
 import functools
+import gzip
+import json
 import logging
 import re
 
@@ -106,31 +108,43 @@ def update_card_list():
         return False
 
     download_info = requests.get(SCRYFALL_BULK_DATA_URL, headers=SCRYFALL_HEADERS).json()
+    jsonl_gz_url = download_info["jsonl_download_uri"];
 
     database.upsert(
         "database_events",
         id=database.DatabaseEvents.CARD_LIST_UPDATE.value,
         time=utils.time_now(),
-        data=download_info["download_uri"],
+        data=jsonl_gz_url,
     )
 
-    if download_info["download_uri"] == url:
+    if jsonl_gz_url == url:
         logging.info("Latest Scryfall card list already downloaded.")
         return
 
     logging.info(
         "Downloading Scryfall card list for card data. Download size: "
-        + str(download_info.get("size"))
+        + str(download_info.get("compressed_size"))
         + " bytes."
     )
 
     # ~30MB download, ~230MB uncompressed
     logging.info("This may take a couple of minutes.")
-    data = requests.get(download_info["download_uri"], headers=SCRYFALL_HEADERS).json()
-
-    save_card_info(data)
-
-    logging.info("Card database update complete.")
+    count = 0
+    with requests.get(
+        jsonl_gz_url, headers=SCRYFALL_HEADERS, stream=True
+    ) as resp:
+        for line in gzip.open(resp.raw):
+            if line:
+                try:
+                    data = json.loads(line)
+                    save_card_info(data)
+                    count += 1
+                    if count % 10_000 == 0:
+                        logging.info(f"{count} cards processed.")
+                except Exception as e:
+                    logging.warn(f"Failed to parse Scryfall data line: {e}")
+                    logging.warn(f"Failing line: {line}")
+    logging.info(f"Card database update complete. {count} cards total.")
 
     return True
 
