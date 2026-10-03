@@ -107,8 +107,10 @@ def update_card_list():
     if utils.time_now() - time < CARD_LIST_UPDATE_INTERVAL:
         return False
 
-    download_info = requests.get(SCRYFALL_BULK_DATA_URL, headers=SCRYFALL_HEADERS).json()
-    jsonl_gz_url = download_info["jsonl_download_uri"];
+    download_info = requests.get(
+        SCRYFALL_BULK_DATA_URL, headers=SCRYFALL_HEADERS
+    ).json()
+    jsonl_gz_url = download_info["jsonl_download_uri"]
 
     database.upsert(
         "database_events",
